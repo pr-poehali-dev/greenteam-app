@@ -302,29 +302,88 @@ const Index = () => {
     XLSX.writeFile(wb, 'greenteam_шаблон.xlsx');
   };
 
-  // Общая обработка строк Excel → БД
+  // Случайные заглушки для пустых полей
+  const randPhone = () => `+7 9${String(Math.floor(Math.random()*100)).padStart(2,'0')} ${String(Math.floor(Math.random()*1000)).padStart(3,'0')}-${String(Math.floor(Math.random()*100)).padStart(2,'0')}-${String(Math.floor(Math.random()*100)).padStart(2,'0')}`;
+  const randYear = () => String(2018 + Math.floor(Math.random() * 7));
+  const randBirthYear = () => String(1980 + Math.floor(Math.random() * 20));
+  const randMonth = () => String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+  const randDay = () => String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+  const randDir = () => DIRECTORATES[Math.floor(Math.random() * DIRECTORATES.length)];
+  const cities = ['Москва', 'Санкт-Петербург', 'Алматы', 'Минск', 'Новосибирск', 'Краснодар', 'Екатеринбург'];
+  const countries = ['Россия', 'Казахстан', 'Беларусь', 'Россия', 'Россия', 'Россия', 'Россия'];
+  const randCity = () => { const i = Math.floor(Math.random() * cities.length); return { city: cities[i], country: countries[i] }; };
+
+  // Общая обработка строк Excel → БД (подставляем заглушки если данных нет)
   const processRows = async (rows: string[][]) => {
     const errors: string[] = [];
     let added = 0;
+    // Определяем заголовки из первой строки
+    const headers = rows[0]?.map(h => String(h || '').toLowerCase().trim()) ?? [];
+    const col = (r: string[], keys: string[]) => {
+      for (const k of keys) {
+        const idx = headers.findIndex(h => h.includes(k));
+        if (idx >= 0 && r[idx]) return String(r[idx]).trim();
+      }
+      return '';
+    };
+
     for (let i = 1; i < rows.length; i++) {
       const r = rows[i];
       if (!r || r.filter(Boolean).length === 0) continue;
-      const name = String(r[0] || '').trim();
-      const role = String(r[1] || '').trim();
-      const directorate = String(r[2] || '').trim();
-      if (!name || !role) { errors.push(`Строка ${i + 1}: нет имени или должности`); continue; }
-      if (!DIRECTORATES.includes(directorate)) { errors.push(`Строка ${i + 1} (${name}): дирекция «${directorate}» не найдена`); continue; }
+
+      // Пробуем получить имя из любого столбца с "имя" или берём первый непустой
+      let name = col(r, ['имя', 'фио', 'name', 'сотрудник']) || String(r[0] || '').trim();
+      let role = col(r, ['должност', 'role', 'позиц']) || String(r[1] || '').trim();
+      let directorate = col(r, ['дирекц', 'отдел', 'dept', 'direktor']) || String(r[2] || '').trim();
+
+      // Пропускаем полностью пустые строки
+      if (!name && !role) continue;
+
+      // Заглушки для обязательных полей
+      if (!name) name = `Сотрудник ${i}`;
+      if (!role) role = 'Должность не указана';
+      if (!DIRECTORATES.includes(directorate)) directorate = randDir();
+
+      const isHeadRaw = col(r, ['руковод', 'head', 'директор']) || String(r[3] || '');
+      const phone = col(r, ['телефон', 'phone', 'тел']) || String(r[4] || '').trim() || randPhone();
+      const tg = col(r, ['telegram', 'телегр', 'tg']) || String(r[5] || '').trim();
+      const startRaw = col(r, ['начал', 'start', 'прием', 'работ']) || String(r[6] || '').trim();
+      const bdRaw = col(r, ['рожден', 'birthday', 'дата рожд']) || String(r[7] || '').trim();
+
+      // Форматируем даты
+      const fmtDate = (raw: string, fallbackYear: string) => {
+        if (!raw) return `${fallbackYear}-${randMonth()}-${randDay()}`;
+        // Если число (Excel serial) — конвертируем
+        const num = Number(raw);
+        if (!isNaN(num) && num > 10000) {
+          const d = XLSX.SSF.parse_date_code(num);
+          return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+        }
+        // Если уже строка с датой
+        const parts = raw.split(/[-./]/);
+        if (parts.length === 3) {
+          const [a, b, c] = parts;
+          if (a.length === 4) return `${a}-${b.padStart(2,'0')}-${c.padStart(2,'0')}`;
+          return `${c}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;
+        }
+        return `${fallbackYear}-${randMonth()}-${randDay()}`;
+      };
+
+      const startDate = fmtDate(startRaw, randYear());
+      const birthday = fmtDate(bdRaw, randBirthYear());
+      const loc = randCity();
+
       const emp: Omit<Employee, 'id'> = {
         name, role, directorate,
-        isHead: String(r[3] || '').toLowerCase().trim() === 'да',
-        phone: String(r[4] || '').trim(),
-        tg: String(r[5] || '').trim(),
-        startDate: String(r[6] || '').trim(),
-        birthday: String(r[7] || '').trim(),
+        isHead: isHeadRaw.toLowerCase().includes('да') || isHeadRaw.toLowerCase().includes('yes'),
+        phone,
+        tg: tg || '',
+        startDate,
+        birthday,
         photo: '',
-        country: String(r[8] || '').trim(),
-        city: String(r[9] || '').trim(),
-        address: String(r[10] || '').trim(),
+        country: col(r, ['стран', 'country']) || String(r[8] || '').trim() || loc.country,
+        city: col(r, ['город', 'city']) || String(r[9] || '').trim() || loc.city,
+        address: col(r, ['адрес', 'address']) || String(r[10] || '').trim() || '',
       };
       try {
         const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(emp) });
