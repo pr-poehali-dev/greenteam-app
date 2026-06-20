@@ -98,8 +98,12 @@ type Employee = {
   isHead: boolean;
   phone: string;
   tg: string;
-  since: string;
+  startDate: string;   // дата начала работы YYYY-MM-DD
+  birthday: string;    // день рождения YYYY-MM-DD
   photo: string;
+  country: string;
+  city: string;
+  address: string;
 };
 
 const emptyEmployee = (): Employee => ({
@@ -110,17 +114,65 @@ const emptyEmployee = (): Employee => ({
   isHead: false,
   phone: '',
   tg: '',
-  since: String(new Date().getFullYear()),
+  startDate: '',
+  birthday: '',
   photo: '',
+  country: '',
+  city: '',
+  address: '',
 });
 
+// Стаж: если < 365 дней — показываем дни, иначе годы
+const calcTenure = (startDate: string): string => {
+  if (!startDate) return '';
+  const start = new Date(startDate);
+  const now = new Date();
+  const diffMs = now.getTime() - start.getTime();
+  if (diffMs < 0) return '';
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays < 365) return `${diffDays} ${declDays(diffDays)}`;
+  const years = Math.floor(diffDays / 365);
+  return `${years} ${declYears(years)}`;
+};
+
+const declDays = (n: number) => {
+  if (n % 10 === 1 && n % 100 !== 11) return 'день';
+  if ([2,3,4].includes(n % 10) && ![12,13,14].includes(n % 100)) return 'дня';
+  return 'дней';
+};
+const declYears = (n: number) => {
+  if (n % 10 === 1 && n % 100 !== 11) return 'год';
+  if ([2,3,4].includes(n % 10) && ![12,13,14].includes(n % 100)) return 'года';
+  return 'лет';
+};
+
+// Дни рождения: именинники сегодня и в ближайшие 7 дней
+const getBirthdayStatus = (birthday: string): { label: string; urgent: boolean } | null => {
+  if (!birthday) return null;
+  const today = new Date();
+  const bDay = new Date(birthday);
+  const thisYear = new Date(today.getFullYear(), bDay.getMonth(), bDay.getDate());
+  const diffMs = thisYear.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return { label: 'Сегодня 🎉', urgent: true };
+  if (diffDays === 1) return { label: 'Завтра 🎂', urgent: true };
+  if (diffDays > 0 && diffDays <= 7) return { label: `Через ${diffDays} дн.`, urgent: false };
+  return null;
+};
+
+const formatBirthday = (birthday: string): string => {
+  if (!birthday) return '';
+  const d = new Date(birthday);
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+};
+
 const initialEmployees: Employee[] = [
-  { id: 1, name: 'Анна Соколова', role: 'Директор по продажам', directorate: 'Дирекция продаж', isHead: true, phone: '+7 900 111-22-33', tg: '@anna_s', since: '2020', photo: '' },
-  { id: 2, name: 'Игорь Лебедев', role: 'Менеджер по продажам', directorate: 'Дирекция продаж', isHead: false, phone: '+7 900 222-33-44', tg: '@igor_l', since: '2022', photo: '' },
-  { id: 3, name: 'Мария Кузнецова', role: 'HR-директор', directorate: 'Дирекция HR', isHead: true, phone: '+7 900 333-44-55', tg: '@masha_k', since: '2019', photo: '' },
-  { id: 4, name: 'Дмитрий Орлов', role: 'Директор по маркетингу', directorate: 'Дирекция маркетинга', isHead: true, phone: '+7 900 444-55-66', tg: '@dmitry_o', since: '2019', photo: '' },
-  { id: 5, name: 'Елена Васильева', role: 'Маркетолог', directorate: 'Дирекция маркетинга', isHead: false, phone: '+7 900 555-66-77', tg: '@elena_v', since: '2021', photo: '' },
-  { id: 6, name: 'Павел Громов', role: 'Директор IT', directorate: 'Дирекция IT', isHead: true, phone: '+7 900 666-77-88', tg: '@pavel_g', since: '2021', photo: '' },
+  { id: 1, name: 'Анна Соколова', role: 'Директор по продажам', directorate: 'Дирекция продаж', isHead: true, phone: '+7 900 111-22-33', tg: '@anna_s', startDate: '2020-03-15', birthday: '1990-06-20', photo: '', country: 'Россия', city: 'Москва', address: 'ул. Тверская, 10' },
+  { id: 2, name: 'Игорь Лебедев', role: 'Менеджер по продажам', directorate: 'Дирекция продаж', isHead: false, phone: '+7 900 222-33-44', tg: '@igor_l', startDate: '2022-11-01', birthday: '1988-06-27', photo: '', country: 'Россия', city: 'Санкт-Петербург', address: 'Невский пр., 45' },
+  { id: 3, name: 'Мария Кузнецова', role: 'HR-директор', directorate: 'Дирекция HR', isHead: true, phone: '+7 900 333-44-55', tg: '@masha_k', startDate: '2019-07-01', birthday: '1985-08-12', photo: '', country: 'Казахстан', city: 'Алматы', address: 'пр. Абая, 150' },
+  { id: 4, name: 'Дмитрий Орлов', role: 'Директор по маркетингу', directorate: 'Дирекция маркетинга', isHead: true, phone: '+7 900 444-55-66', tg: '@dmitry_o', startDate: '2019-01-20', birthday: '1983-03-05', photo: '', country: 'Беларусь', city: 'Минск', address: 'пр. Независимости, 67' },
+  { id: 5, name: 'Елена Васильева', role: 'Маркетолог', directorate: 'Дирекция маркетинга', isHead: false, phone: '+7 900 555-66-77', tg: '@elena_v', startDate: '2021-04-10', birthday: '1993-11-30', photo: '', country: 'Россия', city: 'Краснодар', address: 'ул. Красная, 22' },
+  { id: 6, name: 'Павел Громов', role: 'Директор IT', directorate: 'Дирекция IT', isHead: true, phone: '+7 900 666-77-88', tg: '@pavel_g', startDate: '2021-09-01', birthday: '1991-07-14', photo: '', country: 'Россия', city: 'Новосибирск', address: 'ул. Ленина, 5' },
 ];
 
 const feed = [
@@ -204,7 +256,15 @@ const Index = () => {
     reader.readAsDataURL(file);
   };
 
-  const yearsIn = (since: string) => new Date().getFullYear() - Number(since);
+  // Именинники сегодня и ближайшие 7 дней из базы сотрудников
+  const upcomingBirthdays = employees
+    .map(e => ({ emp: e, status: getBirthdayStatus(e.birthday) }))
+    .filter(x => x.status !== null)
+    .sort((a, b) => {
+      if (a.status!.urgent && !b.status!.urgent) return -1;
+      if (!a.status!.urgent && b.status!.urgent) return 1;
+      return 0;
+    });
 
   // Поиск по всем сотрудникам
   const searchResults = teamSearch.trim()
@@ -525,12 +585,15 @@ const Index = () => {
                                       {initials(head.name)}
                                     </AvatarFallback>
                                   </Avatar>
-                                  <div>
+                                  <div className="flex-1">
                                     <p className="font-black">{head.name}</p>
                                     <p className="text-sm font-semibold" style={{ color }}>{head.role}</p>
-                                    {head.phone && <p className="text-xs text-muted-foreground">{head.phone}</p>}
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      {calcTenure(head.startDate) && <span className="text-[10px] text-muted-foreground">{calcTenure(head.startDate)} в команде</span>}
+                                      {getBirthdayStatus(head.birthday) && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#FF6EC7', color: '#fff' }}>🎂 {getBirthdayStatus(head.birthday)!.label}</span>}
+                                    </div>
                                   </div>
-                                  <Icon name="Crown" size={18} style={{ color: '#FF9F43', marginLeft: 'auto' }} />
+                                  <Icon name="Crown" size={18} style={{ color: '#FF9F43', flexShrink: 0 }} />
                                 </div>
                               </div>
                             )}
@@ -541,23 +604,29 @@ const Index = () => {
                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">
                                   Команда
                                 </p>
-                                {members.filter(m => !m.isHead).map(emp => (
-                                  <div key={emp.id}
-                                    className="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
-                                    onClick={() => setViewEmp(emp)}>
-                                    <Avatar className="h-9 w-9">
-                                      <AvatarImage src={emp.photo} />
-                                      <AvatarFallback className="font-black text-white text-sm" style={{ background: color + 'aa' }}>
-                                        {initials(emp.name)}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                      <p className="font-semibold text-sm">{emp.name}</p>
-                                      <p className="text-xs text-muted-foreground">{emp.role}</p>
+                                {members.filter(m => !m.isHead).map(emp => {
+                                  const bdStatus = getBirthdayStatus(emp.birthday);
+                                  return (
+                                    <div key={emp.id}
+                                      className="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
+                                      onClick={() => setViewEmp(emp)}>
+                                      <Avatar className="h-9 w-9">
+                                        <AvatarImage src={emp.photo} />
+                                        <AvatarFallback className="font-black text-white text-sm" style={{ background: color + 'aa' }}>
+                                          {initials(emp.name)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm truncate">{emp.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{emp.role}</p>
+                                      </div>
+                                      <div className="flex flex-col items-end gap-1 shrink-0">
+                                        {bdStatus && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: '#FF6EC7', color: '#fff' }}>🎂 {bdStatus.label}</span>}
+                                        {calcTenure(emp.startDate) && <span className="text-[10px] text-muted-foreground">{calcTenure(emp.startDate)}</span>}
+                                      </div>
                                     </div>
-                                    {emp.tg && <p className="text-xs text-muted-foreground">{emp.tg}</p>}
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
 
@@ -707,20 +776,40 @@ const Index = () => {
             </Button>
           </Card>
 
-          <Card className="p-5 rounded-2xl border-0 shadow-sm bg-white">
-            <p className="font-bold flex items-center gap-2 mb-3" style={{ color: '#FF6EC7' }}>
-              <Icon name="Cake" size={18} /> Сегодня празднует
-            </p>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-11 w-11">
-                <AvatarFallback className="font-black text-white" style={{ background: '#FF6EC7', fontFamily: 'Nunito' }}>АС</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-bold text-sm">Анна Соколова</p>
-                <p className="text-xs text-muted-foreground">Поздравь коллегу 🎉</p>
+          {/* Уведомления о днях рождения — авто из базы */}
+          {upcomingBirthdays.length > 0 && (
+            <Card className="p-5 rounded-2xl border-0 shadow-sm bg-white">
+              <p className="font-bold flex items-center gap-2 mb-3" style={{ color: '#FF6EC7' }}>
+                <Icon name="Cake" size={18} /> Дни рождения
+              </p>
+              <div className="space-y-3">
+                {upcomingBirthdays.map(({ emp, status }) => {
+                  const dirIdx = DIRECTORATES.indexOf(emp.directorate);
+                  const color = DIR_COLORS[dirIdx] ?? '#FF6EC7';
+                  return (
+                    <div key={emp.id} className="flex items-center gap-2">
+                      <Avatar className="h-9 w-9 shrink-0">
+                        <AvatarImage src={emp.photo} />
+                        <AvatarFallback className="font-black text-white text-xs" style={{ background: color }}>
+                          {initials(emp.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{emp.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatBirthday(emp.birthday)}</p>
+                      </div>
+                      <Badge className="rounded-full text-xs shrink-0 font-bold"
+                        style={status!.urgent
+                          ? { background: '#FF6EC7', color: '#fff' }
+                          : { background: '#f0f8ff', color: '#00B5F0', border: '1px solid #00B5F0' }}>
+                        {status!.label}
+                      </Badge>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
           {active === 'team' && (
             <Card className="p-5 rounded-2xl border-0 shadow-sm bg-white">
@@ -807,9 +896,14 @@ const Index = () => {
                     <p className="font-semibold text-sm" style={{ color }}>{viewEmp.role}</p>
                     <div className="flex gap-2 mt-2 flex-wrap">
                       <Badge variant="secondary" className="rounded-full text-xs">{viewEmp.directorate}</Badge>
-                      {yearsIn(viewEmp.since) > 0 && (
+                      {calcTenure(viewEmp.startDate) && (
                         <Badge className="rounded-full text-xs font-bold" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
-                          {yearsIn(viewEmp.since)} лет в команде
+                          {calcTenure(viewEmp.startDate)} в команде
+                        </Badge>
+                      )}
+                      {getBirthdayStatus(viewEmp.birthday) && (
+                        <Badge className="rounded-full text-xs font-bold" style={{ background: '#FF6EC7', color: '#fff' }}>
+                          {getBirthdayStatus(viewEmp.birthday)!.label}
                         </Badge>
                       )}
                     </div>
@@ -827,10 +921,24 @@ const Index = () => {
                         <span>{viewEmp.tg}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Icon name="CalendarCheck" size={15} style={{ color } as React.CSSProperties} />
-                      <span>В компании с {viewEmp.since} года</span>
-                    </div>
+                    {viewEmp.birthday && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Icon name="Cake" size={15} style={{ color } as React.CSSProperties} />
+                        <span>{formatBirthday(viewEmp.birthday)}</span>
+                      </div>
+                    )}
+                    {viewEmp.startDate && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Icon name="CalendarCheck" size={15} style={{ color } as React.CSSProperties} />
+                        <span>В компании с {new Date(viewEmp.startDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                      </div>
+                    )}
+                    {(viewEmp.country || viewEmp.city || viewEmp.address) && (
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <Icon name="MapPin" size={15} className="mt-0.5 shrink-0" style={{ color } as React.CSSProperties} />
+                        <span>{[viewEmp.country, viewEmp.city, viewEmp.address].filter(Boolean).join(', ')}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Button className="flex-1 rounded-full font-bold" variant="outline"
@@ -910,17 +1018,51 @@ const Index = () => {
                     onChange={e => setEditEmp({ ...editEmp, tg: e.target.value })} />
                 </div>
                 <div>
-                  <Label className="text-xs font-bold text-muted-foreground">В компании с (год)</Label>
-                  <Input className="mt-1 rounded-xl" placeholder="2022" value={editEmp.since}
-                    onChange={e => setEditEmp({ ...editEmp, since: e.target.value })} />
+                  <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                    <Icon name="Cake" size={12} /> День рождения
+                  </Label>
+                  <Input type="date" className="mt-1 rounded-xl" value={editEmp.birthday}
+                    onChange={e => setEditEmp({ ...editEmp, birthday: e.target.value })} />
                 </div>
-                <div className="flex items-end pb-1">
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                    <Icon name="CalendarCheck" size={12} /> Дата начала работы
+                  </Label>
+                  <Input type="date" className="mt-1 rounded-xl" value={editEmp.startDate}
+                    onChange={e => setEditEmp({ ...editEmp, startDate: e.target.value })} />
+                </div>
+
+                {/* Разделитель — местоположение */}
+                <div className="col-span-2 pt-1">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-2">
+                    <Icon name="MapPin" size={12} /> Местоположение
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-bold text-muted-foreground">Страна</Label>
+                      <Input className="mt-1 rounded-xl" placeholder="Россия" value={editEmp.country}
+                        onChange={e => setEditEmp({ ...editEmp, country: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-bold text-muted-foreground">Город</Label>
+                      <Input className="mt-1 rounded-xl" placeholder="Москва" value={editEmp.city}
+                        onChange={e => setEditEmp({ ...editEmp, city: e.target.value })} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs font-bold text-muted-foreground">Адрес офиса</Label>
+                      <Input className="mt-1 rounded-xl" placeholder="ул. Тверская, 10" value={editEmp.address}
+                        onChange={e => setEditEmp({ ...editEmp, address: e.target.value })} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-2 flex items-center pb-1">
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" className="h-4 w-4 rounded accent-pink-400"
                       checked={editEmp.isHead}
                       onChange={e => setEditEmp({ ...editEmp, isHead: e.target.checked })} />
                     <span className="text-sm font-bold flex items-center gap-1">
-                      <Icon name="Crown" size={15} style={{ color: '#FF9F43' }} /> Руководитель
+                      <Icon name="Crown" size={15} style={{ color: '#FF9F43' }} /> Руководитель дирекции
                     </span>
                   </label>
                 </div>
