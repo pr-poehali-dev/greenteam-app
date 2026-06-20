@@ -20,7 +20,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				display: ['Unbounded', 'sans-serif'],
+				display: ['Nunito', 'sans-serif'],
 				sans: ['Golos Text', 'sans-serif'],
 			},
 			colors: {
