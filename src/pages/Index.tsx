@@ -54,14 +54,14 @@ const colorMap: Record<string, string> = {
 const initials = (name: string) =>
   name.split(' ').map((w) => w[0]).join('').slice(0, 2);
 
-/* Логотип GreenTeam SVG — ромб с листом внутри */
 const GreenTeamLogo = ({ size = 36 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="80" height="80" rx="18" fill="#00B5F0" />
-    <text x="40" y="30" textAnchor="middle" fontFamily="Nunito, sans-serif" fontWeight="900" fontSize="22" fill="#FF6EC7" letterSpacing="-1">GREE</text>
-    <text x="40" y="58" textAnchor="middle" fontFamily="Nunito, sans-serif" fontWeight="900" fontSize="22" fill="#FF6EC7" letterSpacing="-1">TEAM</text>
-    <polygon points="40,34 47,44 40,54 33,44" fill="#A8E63D" />
-  </svg>
+  <img
+    src="https://cdn.poehali.dev/projects/b3633dd3-0424-4d83-af84-1d2d5d55dfc4/files/0796df9d-3384-441e-befe-6f779e6ed9c7.jpg"
+    alt="GreenTeam"
+    width={size}
+    height={size}
+    style={{ borderRadius: size * 0.22, objectFit: 'cover', display: 'block' }}
+  />
 );
 
 const Index = () => {
