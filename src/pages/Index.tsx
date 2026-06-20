@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -225,7 +226,11 @@ const Index = () => {
   const [editEmp, setEditEmp] = useState<Employee | null>(null);
   const [isNewEmp, setIsNewEmp] = useState(false);
   const [viewEmp, setViewEmp] = useState<Employee | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{ added: number; errors: string[] } | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
+  const xlsxRef = useRef<HTMLInputElement>(null);
 
   // Загрузка из БД при старте
   useEffect(() => {
@@ -276,6 +281,87 @@ const Index = () => {
     const reader = new FileReader();
     reader.onload = (ev) => setEditEmp({ ...editEmp, photo: ev.target?.result as string });
     reader.readAsDataURL(file);
+  };
+
+  // Скачать шаблон Excel
+  const downloadTemplate = () => {
+    const headers = [
+      'Имя и фамилия *', 'Должность *', 'Дирекция *', 'Руководитель (да/нет)',
+      'Телефон', 'Telegram', 'Дата начала (ГГГГ-ММ-ДД)', 'День рождения (ГГГГ-ММ-ДД)',
+      'Страна', 'Город', 'Адрес офиса',
+    ];
+    const example = [
+      'Иванова Мария', 'Менеджер по продажам', 'Дирекция продаж', 'нет',
+      '+7 900 000-00-00', '@username', '2022-03-01', '1990-05-15',
+      'Россия', 'Москва', 'ул. Тверская, 10',
+    ];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+    ws['!cols'] = headers.map(() => ({ wch: 22 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Сотрудники');
+    XLSX.writeFile(wb, 'greenteam_шаблон.xlsx');
+  };
+
+  // Импорт из Excel
+  const handleXlsx = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      const errors: string[] = [];
+      let added = 0;
+
+      // Пропускаем заголовок (строка 0)
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length === 0) continue;
+        const name = String(r[0] || '').trim();
+        const role = String(r[1] || '').trim();
+        const directorate = String(r[2] || '').trim();
+        if (!name || !role) { errors.push(`Строка ${i + 1}: нет имени или должности`); continue; }
+        if (!DIRECTORATES.includes(directorate)) { errors.push(`Строка ${i + 1} (${name}): дирекция «${directorate}» не найдена`); continue; }
+
+        const emp: Omit<Employee, 'id'> = {
+          name,
+          role,
+          directorate,
+          isHead: String(r[3] || '').toLowerCase().trim() === 'да',
+          phone: String(r[4] || '').trim(),
+          tg: String(r[5] || '').trim(),
+          startDate: String(r[6] || '').trim(),
+          birthday: String(r[7] || '').trim(),
+          photo: '',
+          country: String(r[8] || '').trim(),
+          city: String(r[9] || '').trim(),
+          address: String(r[10] || '').trim(),
+        };
+
+        try {
+          const res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(emp),
+          });
+          const created = await res.json();
+          setEmployees(prev => [...prev, created]);
+          added++;
+        } catch {
+          errors.push(`Строка ${i + 1} (${name}): ошибка сохранения`);
+        }
+      }
+
+      setImportResult({ added, errors });
+      setImporting(false);
+      if (xlsxRef.current) xlsxRef.current.value = '';
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   // Именинники сегодня и ближайшие 7 дней из базы сотрудников
@@ -519,6 +605,14 @@ const Index = () => {
                     className="rounded-full pl-9"
                   />
                 </div>
+                <Button
+                  variant="outline"
+                  className="rounded-full font-bold shrink-0"
+                  style={{ borderColor: '#A8E63D', color: '#4caf20' }}
+                  onClick={() => { setShowImport(true); setImportResult(null); }}
+                >
+                  <Icon name="FileSpreadsheet" size={16} className="mr-1" /> Excel
+                </Button>
                 <Button
                   className="rounded-full font-bold text-white shrink-0"
                   style={{ background: '#FF6EC7' }}
@@ -1111,6 +1205,85 @@ const Index = () => {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Диалог импорта Excel */}
+      <Dialog open={showImport} onOpenChange={v => { setShowImport(v); setImportResult(null); }}>
+        <DialogContent className="rounded-2xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display font-black flex items-center gap-2" style={{ color: '#4caf20' }}>
+              <Icon name="FileSpreadsheet" size={22} /> Импорт из Excel
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-1">
+            {/* Шаг 1 — скачать шаблон */}
+            <div className="rounded-2xl p-4 border-2" style={{ borderColor: '#A8E63D', background: '#f8fff0' }}>
+              <p className="font-black text-sm flex items-center gap-2 mb-1">
+                <span className="h-5 w-5 rounded-full text-white text-xs flex items-center justify-center font-black" style={{ background: '#A8E63D', color: '#1a1a1a' }}>1</span>
+                Скачай шаблон
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">Заполни файл по образцу. Не меняй заголовки столбцов!</p>
+              <Button size="sm" className="rounded-full font-bold" style={{ background: '#A8E63D', color: '#1a1a1a' }} onClick={downloadTemplate}>
+                <Icon name="Download" size={14} className="mr-1" /> Скачать шаблон greenteam_шаблон.xlsx
+              </Button>
+            </div>
+
+            {/* Шаг 2 — список дирекций */}
+            <div className="rounded-2xl p-4 border-2 border-dashed border-gray-200">
+              <p className="font-black text-sm flex items-center gap-2 mb-2">
+                <span className="h-5 w-5 rounded-full text-white text-xs flex items-center justify-center font-black" style={{ background: '#00B5F0' }}>2</span>
+                Точные названия дирекций для столбца «Дирекция»
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {DIRECTORATES.map((d, i) => (
+                  <span key={d} className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: DIR_COLORS[i] + '22', color: DIR_COLORS[i], border: `1px solid ${DIR_COLORS[i]}55` }}>
+                    {d}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Шаг 3 — загрузить файл */}
+            <div className="rounded-2xl p-4" style={{ background: '#f0f8ff', border: '2px dashed #00B5F0' }}>
+              <p className="font-black text-sm flex items-center gap-2 mb-3">
+                <span className="h-5 w-5 rounded-full text-white text-xs flex items-center justify-center font-black" style={{ background: '#FF6EC7' }}>3</span>
+                Загрузи заполненный файл
+              </p>
+              <input ref={xlsxRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleXlsx} />
+              <Button
+                className="w-full rounded-full font-bold text-white"
+                style={{ background: importing ? '#aaa' : '#00B5F0' }}
+                disabled={importing}
+                onClick={() => xlsxRef.current?.click()}
+              >
+                {importing
+                  ? <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Импортирую...</span>
+                  : <span className="flex items-center gap-2"><Icon name="Upload" size={16} />Выбрать Excel-файл</span>
+                }
+              </Button>
+            </div>
+
+            {/* Результат импорта */}
+            {importResult && (
+              <div className={`rounded-2xl p-4 ${importResult.added > 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                <p className="font-black text-sm flex items-center gap-2" style={{ color: importResult.added > 0 ? '#4caf20' : '#ff4444' }}>
+                  <Icon name={importResult.added > 0 ? 'CheckCircle' : 'AlertCircle'} size={16} />
+                  Добавлено сотрудников: {importResult.added}
+                </p>
+                {importResult.errors.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-bold text-red-500">Ошибки ({importResult.errors.length}):</p>
+                    {importResult.errors.map((err, i) => (
+                      <p key={i} className="text-xs text-red-400">• {err}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
