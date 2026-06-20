@@ -1,0 +1,17 @@
+CREATE TABLE t_p9625555_greenteam_app.employees (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT '',
+  directorate TEXT NOT NULL DEFAULT '',
+  is_head BOOLEAN NOT NULL DEFAULT FALSE,
+  phone TEXT NOT NULL DEFAULT '',
+  tg TEXT NOT NULL DEFAULT '',
+  start_date TEXT NOT NULL DEFAULT '',
+  birthday TEXT NOT NULL DEFAULT '',
+  photo TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

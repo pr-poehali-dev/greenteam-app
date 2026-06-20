@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -166,10 +166,7 @@ const formatBirthday = (birthday: string): string => {
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 };
 
-const initialEmployees: Employee[] = [
-  { id: 1, name: 'Пример: Генеральный директор', role: 'CEO', directorate: 'CEO', isHead: true, phone: '', tg: '', startDate: '', birthday: '', photo: '', country: 'Россия', city: 'Москва', address: '' },
-  { id: 2, name: 'Пример: HR-директор', role: 'HRD', directorate: 'HRD', isHead: true, phone: '', tg: '', startDate: '', birthday: '', photo: '', country: 'Россия', city: 'Москва', address: '' },
-];
+const API = 'https://functions.poehali.dev/d42b88e7-b9e7-49e0-aa55-91f9406c1386';
 
 const feed = [
   { author: 'Greenway Global', badge: 'Telegram', color: 'blue', time: '2 часа назад', text: 'Запускаем осеннюю акцию для партнёров! Новые бонусы по программе лояльности уже доступны в личном кабинете.', likes: 124, comments: 18 },
@@ -220,7 +217,9 @@ const Index = () => {
   const [botMsg, setBotMsg] = useState('');
 
   // Дирекция
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [teamSearch, setTeamSearch] = useState('');
   const [expandedDir, setExpandedDir] = useState<string | null>(null);
   const [editEmp, setEditEmp] = useState<Employee | null>(null);
@@ -228,20 +227,47 @@ const Index = () => {
   const [viewEmp, setViewEmp] = useState<Employee | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
-  const saveEmployee = () => {
+  // Загрузка из БД при старте
+  useEffect(() => {
+    fetch(API)
+      .then(r => r.json())
+      .then(data => setEmployees(data))
+      .catch(() => setEmployees([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const saveEmployee = async () => {
     if (!editEmp) return;
-    if (isNewEmp) {
-      setEmployees(prev => [...prev, { ...editEmp, id: Date.now() }]);
-    } else {
-      setEmployees(prev => prev.map(e => e.id === editEmp.id ? editEmp : e));
+    setSaving(true);
+    try {
+      if (isNewEmp) {
+        const res = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editEmp),
+        });
+        const created = await res.json();
+        setEmployees(prev => [...prev, created]);
+      } else {
+        const res = await fetch(`${API}/${editEmp.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editEmp),
+        });
+        const updated = await res.json();
+        setEmployees(prev => prev.map(e => e.id === updated.id ? updated : e));
+      }
+    } finally {
+      setSaving(false);
+      setEditEmp(null);
+      setIsNewEmp(false);
     }
-    setEditEmp(null);
-    setIsNewEmp(false);
   };
 
-  const deleteEmployee = (id: number) => {
-    setEmployees(prev => prev.filter(e => e.id !== id));
+  const deleteEmployee = async (id: number) => {
     setViewEmp(null);
+    await fetch(`${API}/${id}`, { method: 'DELETE' });
+    setEmployees(prev => prev.filter(e => e.id !== id));
   };
 
   const handleEmpPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -473,7 +499,16 @@ const Index = () => {
           {active === 'team' && (
             <div className="animate-fade-in space-y-4">
 
+              {/* Загрузка */}
+              {loading && (
+                <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
+                  <div className="h-6 w-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#00B5F0', borderTopColor: 'transparent' }} />
+                  Загружаю сотрудников...
+                </div>
+              )}
+
               {/* Поиск + кнопка добавить */}
+              {!loading && (
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -492,9 +527,10 @@ const Index = () => {
                   <Icon name="Plus" size={16} className="mr-1" /> Сотрудник
                 </Button>
               </div>
+              )}
 
               {/* Результаты поиска */}
-              {searchResults && (
+              {!loading && searchResults && (
                 <div className="space-y-2">
                   <p className="text-sm font-bold text-muted-foreground px-1">
                     Найдено: {searchResults.length} чел.
@@ -527,7 +563,7 @@ const Index = () => {
               )}
 
               {/* 12 дирекций — аккордеон */}
-              {!searchResults && (
+              {!loading && !searchResults && (
                 <div className="space-y-3">
                   {DIRECTORATES.map((dir, idx) => {
                     const color = DIR_COLORS[idx];
@@ -1066,9 +1102,12 @@ const Index = () => {
               <Button
                 className="w-full rounded-full font-black text-white mt-2"
                 style={{ background: '#00B5F0' }}
-                disabled={!editEmp.name || !editEmp.role}
+                disabled={!editEmp.name || !editEmp.role || saving}
                 onClick={saveEmployee}>
-                {isNewEmp ? 'Добавить сотрудника' : 'Сохранить изменения'}
+                {saving
+                  ? <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Сохраняю...</span>
+                  : isNewEmp ? 'Добавить сотрудника' : 'Сохранить изменения'
+                }
               </Button>
             </div>
           )}
