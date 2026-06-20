@@ -302,6 +302,60 @@ const Index = () => {
     XLSX.writeFile(wb, 'greenteam_шаблон.xlsx');
   };
 
+  // Общая обработка строк Excel → БД
+  const processRows = async (rows: string[][]) => {
+    const errors: string[] = [];
+    let added = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || r.filter(Boolean).length === 0) continue;
+      const name = String(r[0] || '').trim();
+      const role = String(r[1] || '').trim();
+      const directorate = String(r[2] || '').trim();
+      if (!name || !role) { errors.push(`Строка ${i + 1}: нет имени или должности`); continue; }
+      if (!DIRECTORATES.includes(directorate)) { errors.push(`Строка ${i + 1} (${name}): дирекция «${directorate}» не найдена`); continue; }
+      const emp: Omit<Employee, 'id'> = {
+        name, role, directorate,
+        isHead: String(r[3] || '').toLowerCase().trim() === 'да',
+        phone: String(r[4] || '').trim(),
+        tg: String(r[5] || '').trim(),
+        startDate: String(r[6] || '').trim(),
+        birthday: String(r[7] || '').trim(),
+        photo: '',
+        country: String(r[8] || '').trim(),
+        city: String(r[9] || '').trim(),
+        address: String(r[10] || '').trim(),
+      };
+      try {
+        const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(emp) });
+        const created = await res.json();
+        setEmployees(prev => [...prev, created]);
+        added++;
+      } catch { errors.push(`Строка ${i + 1} (${name}): ошибка сохранения`); }
+    }
+    return { added, errors };
+  };
+
+  // Импорт из URL
+  const importFromUrl = async (url: string) => {
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const res = await fetch(url);
+      const arrayBuffer = await res.arrayBuffer();
+      const data = new Uint8Array(arrayBuffer);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows: string[][] = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      const result = await processRows(rows);
+      setImportResult(result);
+    } catch (err) {
+      setImportResult({ added: 0, errors: ['Не удалось загрузить файл по ссылке'] });
+    } finally {
+      setImporting(false);
+    }
+  };
+
   // Импорт из Excel
   const handleXlsx = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1218,6 +1272,32 @@ const Index = () => {
           </DialogHeader>
 
           <div className="space-y-4 mt-1">
+            {/* Быстрый импорт из хранилища */}
+            <div className="rounded-2xl p-4 text-white relative overflow-hidden" style={{ background: 'linear-gradient(120deg, #FF6EC7, #00B5F0)' }}>
+              <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-white/10" />
+              <p className="font-black text-sm mb-1 flex items-center gap-2">
+                <Icon name="Zap" size={16} /> Быстрый импорт из вашего хранилища
+              </p>
+              <p className="text-xs text-white/85 mb-3">Файл уже загружен — нажми чтобы импортировать сразу</p>
+              <Button
+                className="rounded-full font-black w-full"
+                style={{ background: '#fff', color: '#FF6EC7' }}
+                disabled={importing}
+                onClick={() => importFromUrl('https://cdn.poehali.dev/projects/b3633dd3-0424-4d83-af84-1d2d5d55dfc4/bucket/c98ca3c3-a412-415f-a68e-a9043c558567.xlsx')}
+              >
+                {importing
+                  ? <span className="flex items-center gap-2 justify-center"><span className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />Импортирую...</span>
+                  : <span className="flex items-center gap-2 justify-center"><Icon name="CloudDownload" size={16} /> Загрузить сотрудников из файла</span>
+                }
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-3 text-muted-foreground text-xs">
+              <div className="flex-1 h-px bg-gray-200" />
+              или загрузи новый файл вручную
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
             {/* Шаг 1 — скачать шаблон */}
             <div className="rounded-2xl p-4 border-2" style={{ borderColor: '#A8E63D', background: '#f8fff0' }}>
               <p className="font-black text-sm flex items-center gap-2 mb-1">
