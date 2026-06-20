@@ -29,6 +29,7 @@ def row_to_emp(row):
         'country': row[10],
         'city': row[11],
         'address': row[12],
+        'department': row[13],
     }
 
 def handler(event: dict, context) -> dict:
@@ -42,10 +43,12 @@ def handler(event: dict, context) -> dict:
     conn = get_conn()
     cur = conn.cursor()
 
+    SELECT_COLS = 'id, name, role, directorate, is_head, phone, tg, start_date, birthday, photo, country, city, address, department'
+
     try:
         # GET /  — список всех сотрудников
         if method == 'GET' and len(parts) <= 1:
-            cur.execute(f'SELECT id, name, role, directorate, is_head, phone, tg, start_date, birthday, photo, country, city, address FROM {SCHEMA}.employees ORDER BY is_head DESC, name')
+            cur.execute(f'SELECT {SELECT_COLS} FROM {SCHEMA}.employees ORDER BY is_head DESC, name')
             rows = cur.fetchall()
             return {
                 'statusCode': 200,
@@ -58,14 +61,15 @@ def handler(event: dict, context) -> dict:
             body = json.loads(event.get('body') or '{}')
             cur.execute(
                 f'''INSERT INTO {SCHEMA}.employees
-                    (name, role, directorate, is_head, phone, tg, start_date, birthday, photo, country, city, address)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                    RETURNING id, name, role, directorate, is_head, phone, tg, start_date, birthday, photo, country, city, address''',
+                    (name, role, directorate, is_head, phone, tg, start_date, birthday, photo, country, city, address, department)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    RETURNING {SELECT_COLS}''',
                 (
                     body.get('name', ''), body.get('role', ''), body.get('directorate', ''),
                     body.get('isHead', False), body.get('phone', ''), body.get('tg', ''),
                     body.get('startDate', ''), body.get('birthday', ''), body.get('photo', ''),
                     body.get('country', ''), body.get('city', ''), body.get('address', ''),
+                    body.get('department', ''),
                 )
             )
             row = cur.fetchone()
@@ -84,14 +88,15 @@ def handler(event: dict, context) -> dict:
                 f'''UPDATE {SCHEMA}.employees SET
                     name=%s, role=%s, directorate=%s, is_head=%s, phone=%s, tg=%s,
                     start_date=%s, birthday=%s, photo=%s, country=%s, city=%s, address=%s,
-                    updated_at=NOW()
+                    department=%s, updated_at=NOW()
                     WHERE id=%s
-                    RETURNING id, name, role, directorate, is_head, phone, tg, start_date, birthday, photo, country, city, address''',
+                    RETURNING {SELECT_COLS}''',
                 (
                     body.get('name', ''), body.get('role', ''), body.get('directorate', ''),
                     body.get('isHead', False), body.get('phone', ''), body.get('tg', ''),
                     body.get('startDate', ''), body.get('birthday', ''), body.get('photo', ''),
                     body.get('country', ''), body.get('city', ''), body.get('address', ''),
+                    body.get('department', ''),
                     emp_id,
                 )
             )

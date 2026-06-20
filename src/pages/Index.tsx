@@ -95,11 +95,12 @@ type Employee = {
   name: string;
   role: string;
   directorate: string;
+  department: string;  // отдел/направление внутри дирекции
   isHead: boolean;
   phone: string;
   tg: string;
-  startDate: string;   // дата начала работы YYYY-MM-DD
-  birthday: string;    // день рождения YYYY-MM-DD
+  startDate: string;
+  birthday: string;
   photo: string;
   country: string;
   city: string;
@@ -111,6 +112,7 @@ const emptyEmployee = (): Employee => ({
   name: '',
   role: '',
   directorate: DIRECTORATES[0],
+  department: '',
   isHead: false,
   phone: '',
   tg: '',
@@ -225,6 +227,7 @@ const Index = () => {
   const [editEmp, setEditEmp] = useState<Employee | null>(null);
   const [isNewEmp, setIsNewEmp] = useState(false);
   const [viewEmp, setViewEmp] = useState<Employee | null>(null);
+  const [activeDepts, setActiveDepts] = useState<Record<string, string>>({});
   const photoRef = useRef<HTMLInputElement>(null);
 
   // Загрузка из БД при старте
@@ -604,7 +607,20 @@ const Index = () => {
                         </button>
 
                         {/* Раскрытый список */}
-                        {isOpen && (
+                        {isOpen && (() => {
+                          // Уникальные отделы внутри этой дирекции
+                          const depts = Array.from(new Set(
+                            members.filter(m => !m.isHead && m.department).map(m => m.department)
+                          )).sort();
+                          const hasDepts = depts.length > 0;
+                          const activeDeptKey = `dept_${dir}`;
+                          const activeDept = (activeDepts[activeDeptKey] ?? depts[0]) || '';
+
+                          const teamToShow = hasDepts && activeDept
+                            ? members.filter(m => !m.isHead && m.department === activeDept)
+                            : members.filter(m => !m.isHead);
+
+                          return (
                           <div className="border-t" style={{ borderColor: color + '33' }}>
                             {/* Руководитель */}
                             {head && (
@@ -632,13 +648,31 @@ const Index = () => {
                               </div>
                             )}
 
-                            {/* Команда */}
-                            {members.filter(m => !m.isHead).length > 0 && (
-                              <div className="px-4 py-3 space-y-2">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">
-                                  Команда
-                                </p>
-                                {members.filter(m => !m.isHead).map(emp => {
+                            {/* Вкладки отделов/направлений */}
+                            {hasDepts && (
+                              <div className="px-4 pt-3 flex gap-2 flex-wrap border-t" style={{ borderColor: color + '22' }}>
+                                {depts.map(dept => (
+                                  <button key={dept}
+                                    className="px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                                    style={activeDept === dept
+                                      ? { background: color, color: '#fff', boxShadow: `0 2px 8px ${color}55` }
+                                      : { background: color + '15', color, border: `1.5px solid ${color}44` }
+                                    }
+                                    onClick={() => setActiveDepts(prev => ({ ...prev, [activeDeptKey]: dept }))}>
+                                    {dept}
+                                    <span className="ml-1 opacity-70">
+                                      {members.filter(m => !m.isHead && m.department === dept).length}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Список сотрудников */}
+                            {teamToShow.length > 0 && (
+                              <div className="px-4 py-3 space-y-1">
+                                {!hasDepts && <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Команда</p>}
+                                {teamToShow.map(emp => {
                                   const bdStatus = getBirthdayStatus(emp.birthday);
                                   return (
                                     <div key={emp.id}
@@ -676,7 +710,8 @@ const Index = () => {
                               </Button>
                             </div>
                           </div>
-                        )}
+                          );
+                        })()}
                       </Card>
                     );
                   })}
@@ -930,6 +965,11 @@ const Index = () => {
                     <p className="font-semibold text-sm" style={{ color }}>{viewEmp.role}</p>
                     <div className="flex gap-2 mt-2 flex-wrap">
                       <Badge variant="secondary" className="rounded-full text-xs">{viewEmp.directorate}</Badge>
+                      {viewEmp.department && (
+                        <Badge className="rounded-full text-xs font-bold" style={{ background: color + '20', color }}>
+                          {viewEmp.department}
+                        </Badge>
+                      )}
                       {calcTenure(viewEmp.startDate) && (
                         <Badge className="rounded-full text-xs font-bold" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
                           {calcTenure(viewEmp.startDate)} в команде
@@ -1040,6 +1080,31 @@ const Index = () => {
                       {DIRECTORATES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                    <Icon name="Folders" size={12} /> Отдел / направление
+                  </Label>
+                  <Input className="mt-1 rounded-xl" placeholder="Например: ОРП, КЦ, Отдел продаж..."
+                    value={editEmp.department}
+                    onChange={e => setEditEmp({ ...editEmp, department: e.target.value })} />
+                  {/* Подсказка — существующие отделы в этой дирекции */}
+                  {(() => {
+                    const existingDepts = Array.from(new Set(
+                      employees.filter(e => e.directorate === editEmp.directorate && e.department).map(e => e.department)
+                    ));
+                    return existingDepts.length > 0 ? (
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {existingDepts.map(d => (
+                          <button key={d} type="button"
+                            className="text-[11px] px-2 py-0.5 rounded-full border font-semibold transition-colors hover:bg-gray-100"
+                            onClick={() => setEditEmp({ ...editEmp, department: d })}>
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
                 <div>
                   <Label className="text-xs font-bold text-muted-foreground">Телефон</Label>
