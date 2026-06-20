@@ -110,19 +110,31 @@ const Index = () => {
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
-        <div className="relative overflow-hidden rounded-3xl bg-brand-gradient p-8 sm:p-12 text-white shadow-xl animate-scale-in">
+        <div className="relative overflow-hidden rounded-3xl bg-brand-blue shadow-xl animate-scale-in">
           <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 animate-float" />
-          <div className="absolute right-24 bottom-0 h-24 w-24 rounded-full bg-white/10" />
-          <div className="relative">
-            <Badge className="bg-white/20 hover:bg-white/20 text-white border-0 mb-4 backdrop-blur">
-              Внутренний портал команды
-            </Badge>
-            <h1 className="font-display font-black text-3xl sm:text-5xl max-w-2xl leading-tight">
-              Привет, GreenTeam! 👋
-            </h1>
-            <p className="mt-3 text-white/90 max-w-lg text-base sm:text-lg">
-              Новости, события и жизнь компании Greenway Global — в одном месте.
-            </p>
+          <div className="absolute left-32 -bottom-12 h-36 w-36 rounded-full bg-brand-green/30" />
+          <div className="grid md:grid-cols-2 items-center">
+            <div className="relative p-8 sm:p-12 text-white z-10">
+              <Badge className="bg-white/20 hover:bg-white/20 text-white border-0 mb-4 backdrop-blur">
+                Внутренний портал команды
+              </Badge>
+              <h1 className="font-display font-black text-4xl sm:text-6xl leading-[0.95] tracking-tight">
+                Привет,
+                <br />
+                <span className="text-brand-pink">GreenTeam!</span>
+              </h1>
+              <p className="mt-4 text-white/90 max-w-md text-base sm:text-lg">
+                Новости, события и жизнь компании Greenway Global — в одном месте.
+              </p>
+            </div>
+            <div className="relative h-56 md:h-80">
+              <img
+                src="https://cdn.poehali.dev/projects/b3633dd3-0424-4d83-af84-1d2d5d55dfc4/bucket/cb4ec47f-04ed-494b-9fbf-54da89bba876.jpg"
+                alt="Команда GreenTeam"
+                className="absolute inset-0 h-full w-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-brand-blue via-brand-blue/40 to-transparent md:via-transparent md:to-transparent" />
+            </div>
           </div>
         </div>
       </section>
