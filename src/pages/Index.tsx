@@ -313,78 +313,110 @@ const Index = () => {
   const countries = ['Россия', 'Казахстан', 'Беларусь', 'Россия', 'Россия', 'Россия', 'Россия'];
   const randCity = () => { const i = Math.floor(Math.random() * cities.length); return { city: cities[i], country: countries[i] }; };
 
-  // Общая обработка строк Excel → БД (подставляем заглушки если данных нет)
+  // Форматируем дату из любого формата
+  const fmtDate = (raw: string, fallbackYear: string) => {
+    if (!raw) return `${fallbackYear}-${randMonth()}-${randDay()}`;
+    const num = Number(raw);
+    if (!isNaN(num) && num > 10000) {
+      try {
+        const d = XLSX.SSF.parse_date_code(num);
+        return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+      } catch { /* fallback */ }
+    }
+    const parts = raw.split(/[-./\s]/);
+    if (parts.length >= 3) {
+      const [a, b, c] = parts;
+      if (a.length === 4) return `${a}-${b.padStart(2,'0')}-${c.padStart(2,'0')}`;
+      if (c && c.length === 4) return `${c}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;
+    }
+    return `${fallbackYear}-${randMonth()}-${randDay()}`;
+  };
+
+  // Общая обработка строк Excel → БД
+  // Читаем ВСЕ строки, для каждой берём все непустые ячейки
   const processRows = async (rows: string[][]) => {
     const errors: string[] = [];
     let added = 0;
-    // Определяем заголовки из первой строки
-    const headers = rows[0]?.map(h => String(h || '').toLowerCase().trim()) ?? [];
-    const col = (r: string[], keys: string[]) => {
-      for (const k of keys) {
-        const idx = headers.findIndex(h => h.includes(k));
-        if (idx >= 0 && r[idx]) return String(r[idx]).trim();
-      }
-      return '';
-    };
 
-    for (let i = 1; i < rows.length; i++) {
+    // Находим строку с данными — пропускаем заголовки
+    // Заголовок — строка где нет ничего похожего на имя (ФИО обычно 2+ слова)
+    let startRow = 0;
+    for (let i = 0; i < Math.min(rows.length, 5); i++) {
       const r = rows[i];
-      if (!r || r.filter(Boolean).length === 0) continue;
+      if (!r) continue;
+      const first = String(r[0] || '').trim();
+      // Если первая ячейка содержит 2+ слова кириллицей — это уже данные
+      if (/[А-ЯЁа-яё]{2,}\s+[А-ЯЁа-яё]{2,}/.test(first)) { startRow = i; break; }
+      // Иначе считаем строку заголовком
+      startRow = i + 1;
+    }
 
-      // Пробуем получить имя из любого столбца с "имя" или берём первый непустой
-      let name = col(r, ['имя', 'фио', 'name', 'сотрудник']) || String(r[0] || '').trim();
-      let role = col(r, ['должност', 'role', 'позиц']) || String(r[1] || '').trim();
-      let directorate = col(r, ['дирекц', 'отдел', 'dept', 'direktor']) || String(r[2] || '').trim();
+    for (let i = startRow; i < rows.length; i++) {
+      const r = rows[i];
+      // Собираем все непустые значения строки
+      const vals = (r || []).map(v => String(v ?? '').trim()).filter(Boolean);
+      if (vals.length === 0) continue;
 
-      // Пропускаем полностью пустые строки
-      if (!name && !role) continue;
+      // Имя — первое значение из строки с двумя словами кириллицей, иначе первая непустая ячейка
+      let name = '';
+      let nameIdx = 0;
+      for (let j = 0; j < (r || []).length; j++) {
+        const v = String(r[j] || '').trim();
+        if (/[А-ЯЁа-яё]{2,}\s+[А-ЯЁа-яё]{2,}/.test(v)) { name = v; nameIdx = j; break; }
+      }
+      if (!name) { name = String(r[0] || '').trim() || `Сотрудник ${i}`; nameIdx = 0; }
 
-      // Заглушки для обязательных полей
-      if (!name) name = `Сотрудник ${i}`;
+      // Должность — ищем строку без цифр, не похожую на имя, не похожую на дирекцию
+      let role = '';
+      for (let j = 0; j < (r || []).length; j++) {
+        if (j === nameIdx) continue;
+        const v = String(r[j] || '').trim();
+        if (v && !/^\+?[\d\s\-()]+$/.test(v) && !/\d{4}-\d{2}-\d{2}/.test(v) && v.length > 2) {
+          // Не имя (одно слово или уже нашли) и не похоже на дирекцию
+          if (!DIRECTORATES.includes(v)) { role = v; break; }
+        }
+      }
       if (!role) role = 'Должность не указана';
-      if (!DIRECTORATES.includes(directorate)) directorate = randDir();
 
-      const isHeadRaw = col(r, ['руковод', 'head', 'директор']) || String(r[3] || '');
-      const phone = col(r, ['телефон', 'phone', 'тел']) || String(r[4] || '').trim() || randPhone();
-      const tg = col(r, ['telegram', 'телегр', 'tg']) || String(r[5] || '').trim();
-      const startRaw = col(r, ['начал', 'start', 'прием', 'работ']) || String(r[6] || '').trim();
-      const bdRaw = col(r, ['рожден', 'birthday', 'дата рожд']) || String(r[7] || '').trim();
+      // Дирекция — ищем точное совпадение с нашим списком
+      let directorate = '';
+      for (const v of (r || []).map(x => String(x || '').trim())) {
+        if (DIRECTORATES.includes(v)) { directorate = v; break; }
+      }
+      if (!directorate) directorate = randDir();
 
-      // Форматируем даты
-      const fmtDate = (raw: string, fallbackYear: string) => {
-        if (!raw) return `${fallbackYear}-${randMonth()}-${randDay()}`;
-        // Если число (Excel serial) — конвертируем
-        const num = Number(raw);
-        if (!isNaN(num) && num > 10000) {
-          const d = XLSX.SSF.parse_date_code(num);
-          return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+      // Телефон — ищем по паттерну +7 или 8 или просто цифры
+      let phone = '';
+      for (const v of (r || []).map(x => String(x || '').trim())) {
+        if (/^\+?[78][\s\d\-()]{9,}/.test(v) || /^\d{10,11}$/.test(v.replace(/\D/g,''))) {
+          phone = v; break;
         }
-        // Если уже строка с датой
-        const parts = raw.split(/[-./]/);
-        if (parts.length === 3) {
-          const [a, b, c] = parts;
-          if (a.length === 4) return `${a}-${b.padStart(2,'0')}-${c.padStart(2,'0')}`;
-          return `${c}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;
-        }
-        return `${fallbackYear}-${randMonth()}-${randDay()}`;
-      };
+      }
+      if (!phone) phone = randPhone();
 
-      const startDate = fmtDate(startRaw, randYear());
-      const birthday = fmtDate(bdRaw, randBirthYear());
+      // Telegram — ищем @
+      let tg = '';
+      for (const v of (r || []).map(x => String(x || '').trim())) {
+        if (v.startsWith('@')) { tg = v; break; }
+      }
+
       const loc = randCity();
 
       const emp: Omit<Employee, 'id'> = {
-        name, role, directorate,
-        isHead: isHeadRaw.toLowerCase().includes('да') || isHeadRaw.toLowerCase().includes('yes'),
+        name,
+        role,
+        directorate,
+        isHead: false,
         phone,
-        tg: tg || '',
-        startDate,
-        birthday,
+        tg,
+        startDate: `${randYear()}-${randMonth()}-${randDay()}`,
+        birthday: `${randBirthYear()}-${randMonth()}-${randDay()}`,
         photo: '',
-        country: col(r, ['стран', 'country']) || String(r[8] || '').trim() || loc.country,
-        city: col(r, ['город', 'city']) || String(r[9] || '').trim() || loc.city,
-        address: col(r, ['адрес', 'address']) || String(r[10] || '').trim() || '',
+        country: loc.country,
+        city: loc.city,
+        address: '',
       };
+
       try {
         const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(emp) });
         const created = await res.json();
