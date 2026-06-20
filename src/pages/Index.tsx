@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import * as XLSX from 'xlsx';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -226,11 +225,7 @@ const Index = () => {
   const [editEmp, setEditEmp] = useState<Employee | null>(null);
   const [isNewEmp, setIsNewEmp] = useState(false);
   const [viewEmp, setViewEmp] = useState<Employee | null>(null);
-  const [showImport, setShowImport] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ added: number; errors: string[] } | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
-  const xlsxRef = useRef<HTMLInputElement>(null);
 
   // Загрузка из БД при старте
   useEffect(() => {
@@ -283,24 +278,7 @@ const Index = () => {
     reader.readAsDataURL(file);
   };
 
-  // Скачать шаблон Excel
-  const downloadTemplate = () => {
-    const headers = [
-      'Имя и фамилия *', 'Должность *', 'Дирекция *', 'Руководитель (да/нет)',
-      'Телефон', 'Telegram', 'Дата начала (ГГГГ-ММ-ДД)', 'День рождения (ГГГГ-ММ-ДД)',
-      'Страна', 'Город', 'Адрес офиса',
-    ];
-    const example = [
-      'Иванова Мария', 'Менеджер по продажам', 'Дирекция продаж', 'нет',
-      '+7 900 000-00-00', '@username', '2022-03-01', '1990-05-15',
-      'Россия', 'Москва', 'ул. Тверская, 10',
-    ];
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
-    ws['!cols'] = headers.map(() => ({ wch: 22 }));
-    XLSX.utils.book_append_sheet(wb, ws, 'Сотрудники');
-    XLSX.writeFile(wb, 'greenteam_шаблон.xlsx');
-  };
+
 
   // Случайные заглушки для пустых полей
   const randPhone = () => `+7 9${String(Math.floor(Math.random()*100)).padStart(2,'0')} ${String(Math.floor(Math.random()*1000)).padStart(3,'0')}-${String(Math.floor(Math.random()*100)).padStart(2,'0')}-${String(Math.floor(Math.random()*100)).padStart(2,'0')}`;
@@ -501,13 +479,6 @@ const Index = () => {
           errors.push(`Строка ${i + 1} (${name}): ошибка сохранения`);
         }
       }
-
-      setImportResult({ added, errors });
-      setImporting(false);
-      if (xlsxRef.current) xlsxRef.current.value = '';
-    };
-    reader.readAsArrayBuffer(file);
-  };
 
   // Именинники сегодня и ближайшие 7 дней из базы сотрудников
   const upcomingBirthdays = employees
