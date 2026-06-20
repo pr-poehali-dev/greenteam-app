@@ -7,35 +7,68 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const nav = [
   { id: 'feed', label: 'Лента', icon: 'Newspaper' },
   { id: 'events', label: 'События', icon: 'CalendarDays' },
   { id: 'birthdays', label: 'Дни рождения', icon: 'Cake' },
   { id: 'team', label: 'Дирекция', icon: 'Network' },
-  { id: 'profiles', label: 'Профили', icon: 'Users' },
   { id: 'bot', label: 'Боттендер', icon: 'Bot' },
 ];
 
-type Profile = {
+const DIRECTORATES = [
+  'Дирекция продаж',
+  'Дирекция маркетинга',
+  'Дирекция HR',
+  'Дирекция финансов',
+  'Дирекция IT',
+  'Дирекция логистики',
+  'Дирекция развития',
+  'Дирекция обучения',
+  'Дирекция контроля качества',
+  'Дирекция клиентского сервиса',
+  'Дирекция правового обеспечения',
+  'Дирекция стратегии',
+];
+
+const DIR_COLORS = [
+  '#FF6EC7', '#00B5F0', '#A8E63D', '#FF9F43', '#6C63FF',
+  '#FF6B6B', '#26de81', '#fd9644', '#45aaf2', '#a55eea',
+  '#2bcbba', '#fc5c65',
+];
+
+type Employee = {
   id: number;
   name: string;
   role: string;
-  dept: string;
+  directorate: string;
+  isHead: boolean;
   phone: string;
   tg: string;
   since: string;
   photo: string;
-  color: string;
 };
 
-const initialProfiles: Profile[] = [
-  { id: 1, name: 'Анна Соколова', role: 'Менеджер по продажам', dept: 'Продажи', phone: '+7 900 111-22-33', tg: '@anna_s', since: '2022', photo: '', color: '#FF6EC7' },
-  { id: 2, name: 'Игорь Лебедев', role: 'Аналитик', dept: 'Аналитика', phone: '+7 900 222-33-44', tg: '@igor_l', since: '2021', photo: '', color: '#00B5F0' },
-  { id: 3, name: 'Мария Кузнецова', role: 'HR-специалист', dept: 'Персонал', phone: '+7 900 333-44-55', tg: '@masha_k', since: '2023', photo: '', color: '#A8E63D' },
-  { id: 4, name: 'Дмитрий Орлов', role: 'Руководитель направления', dept: 'Управление', phone: '+7 900 444-55-66', tg: '@dmitry_o', since: '2019', photo: '', color: '#FF6EC7' },
-  { id: 5, name: 'Елена Васильева', role: 'Маркетолог', dept: 'Маркетинг', phone: '+7 900 555-66-77', tg: '@elena_v', since: '2021', photo: '', color: '#00B5F0' },
-  { id: 6, name: 'Павел Громов', role: 'Менеджер', dept: 'Продажи', phone: '+7 900 666-77-88', tg: '@pavel_g', since: '2025', photo: '', color: '#A8E63D' },
+const emptyEmployee = (): Employee => ({
+  id: Date.now(),
+  name: '',
+  role: '',
+  directorate: DIRECTORATES[0],
+  isHead: false,
+  phone: '',
+  tg: '',
+  since: String(new Date().getFullYear()),
+  photo: '',
+});
+
+const initialEmployees: Employee[] = [
+  { id: 1, name: 'Анна Соколова', role: 'Директор по продажам', directorate: 'Дирекция продаж', isHead: true, phone: '+7 900 111-22-33', tg: '@anna_s', since: '2020', photo: '' },
+  { id: 2, name: 'Игорь Лебедев', role: 'Менеджер по продажам', directorate: 'Дирекция продаж', isHead: false, phone: '+7 900 222-33-44', tg: '@igor_l', since: '2022', photo: '' },
+  { id: 3, name: 'Мария Кузнецова', role: 'HR-директор', directorate: 'Дирекция HR', isHead: true, phone: '+7 900 333-44-55', tg: '@masha_k', since: '2019', photo: '' },
+  { id: 4, name: 'Дмитрий Орлов', role: 'Директор по маркетингу', directorate: 'Дирекция маркетинга', isHead: true, phone: '+7 900 444-55-66', tg: '@dmitry_o', since: '2019', photo: '' },
+  { id: 5, name: 'Елена Васильева', role: 'Маркетолог', directorate: 'Дирекция маркетинга', isHead: false, phone: '+7 900 555-66-77', tg: '@elena_v', since: '2021', photo: '' },
+  { id: 6, name: 'Павел Громов', role: 'Директор IT', directorate: 'Дирекция IT', isHead: true, phone: '+7 900 666-77-88', tg: '@pavel_g', since: '2021', photo: '' },
 ];
 
 const feed = [
@@ -62,13 +95,6 @@ const anniversaries = [
   { name: 'Павел Громов', years: 1, role: 'Менеджер' },
 ];
 
-const directors = [
-  { name: 'Сергей Морозов', role: 'Генеральный директор', dept: 'Управление' },
-  { name: 'Ольга Петрова', role: 'Директор по продажам', dept: 'Коммерция' },
-  { name: 'Антон Зайцев', role: 'Директор по развитию', dept: 'Стратегия' },
-  { name: 'Ирина Белова', role: 'HR-директор', dept: 'Персонал' },
-];
-
 const colorMap: Record<string, string> = {
   pink: 'bg-brand-pink text-white',
   blue: 'bg-brand-blue text-white',
@@ -76,78 +102,70 @@ const colorMap: Record<string, string> = {
 };
 
 const initials = (name: string) =>
-  name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 
-const GreenTeamLogo = ({ size = 44 }: { size?: number }) => {
-  const r = size * 0.22;
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100" height="100" rx="24" fill="#00B5F0"/>
-      {/* Буквы GREEN — верхний ряд */}
-      <text
-        x="50" y="38"
-        textAnchor="middle"
-        fontFamily="Nunito, Arial Rounded MT Bold, sans-serif"
-        fontWeight="900"
-        fontSize="30"
-        fill="#FF6EC7"
-        stroke="#fff"
-        strokeWidth="2"
-        paintOrder="stroke"
-        letterSpacing="-1"
-      >GREEN</text>
-      {/* Зелёный ромб-листок по центру */}
-      <path d="M50 42 C54 46 58 50 50 58 C42 50 46 46 50 42Z" fill="#A8E63D"/>
-      <path d="M44 50 C48 46 52 46 56 50 C52 54 48 54 44 50Z" fill="#A8E63D"/>
-      {/* Звёздочка внутри ромба */}
-      <circle cx="50" cy="50" r="3" fill="#00B5F0"/>
-      {/* Буквы TEAM — нижний ряд */}
-      <text
-        x="50" y="82"
-        textAnchor="middle"
-        fontFamily="Nunito, Arial Rounded MT Bold, sans-serif"
-        fontWeight="900"
-        fontSize="30"
-        fill="#FF6EC7"
-        stroke="#fff"
-        strokeWidth="2"
-        paintOrder="stroke"
-        letterSpacing="-1"
-      >TEAM</text>
-    </svg>
-  );
-};
+const GreenTeamLogo = ({ size = 44 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="24" fill="#00B5F0"/>
+    <text x="50" y="38" textAnchor="middle" fontFamily="Nunito, Arial Rounded MT Bold, sans-serif" fontWeight="900" fontSize="30" fill="#FF6EC7" stroke="#fff" strokeWidth="2" paintOrder="stroke" letterSpacing="-1">GREEN</text>
+    <path d="M50 42 C54 46 58 50 50 58 C42 50 46 46 50 42Z" fill="#A8E63D"/>
+    <path d="M44 50 C48 46 52 46 56 50 C52 54 48 54 44 50Z" fill="#A8E63D"/>
+    <circle cx="50" cy="50" r="3" fill="#00B5F0"/>
+    <text x="50" y="82" textAnchor="middle" fontFamily="Nunito, Arial Rounded MT Bold, sans-serif" fontWeight="900" fontSize="30" fill="#FF6EC7" stroke="#fff" strokeWidth="2" paintOrder="stroke" letterSpacing="-1">TEAM</text>
+  </svg>
+);
 
 const Index = () => {
   const [active, setActive] = useState('feed');
   const [botMsg, setBotMsg] = useState('');
-  const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
-  const [editProfile, setEditProfile] = useState<Profile | null>(null);
-  const [viewProfile, setViewProfile] = useState<Profile | null>(null);
-  const [search, setSearch] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const saveProfile = () => {
-    if (!editProfile) return;
-    setProfiles(prev => prev.map(p => p.id === editProfile.id ? editProfile : p));
-    setEditProfile(null);
+  // Дирекция
+  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [teamSearch, setTeamSearch] = useState('');
+  const [expandedDir, setExpandedDir] = useState<string | null>(null);
+  const [editEmp, setEditEmp] = useState<Employee | null>(null);
+  const [isNewEmp, setIsNewEmp] = useState(false);
+  const [viewEmp, setViewEmp] = useState<Employee | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+
+  const saveEmployee = () => {
+    if (!editEmp) return;
+    if (isNewEmp) {
+      setEmployees(prev => [...prev, { ...editEmp, id: Date.now() }]);
+    } else {
+      setEmployees(prev => prev.map(e => e.id === editEmp.id ? editEmp : e));
+    }
+    setEditEmp(null);
+    setIsNewEmp(false);
   };
 
-  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const deleteEmployee = (id: number) => {
+    setEmployees(prev => prev.filter(e => e.id !== id));
+    setViewEmp(null);
+  };
+
+  const handleEmpPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !editProfile) return;
+    if (!file || !editEmp) return;
     const reader = new FileReader();
-    reader.onload = (ev) => setEditProfile({ ...editProfile, photo: ev.target?.result as string });
+    reader.onload = (ev) => setEditEmp({ ...editEmp, photo: ev.target?.result as string });
     reader.readAsDataURL(file);
   };
 
-  const filtered = profiles.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.dept.toLowerCase().includes(search.toLowerCase()) ||
-    p.role.toLowerCase().includes(search.toLowerCase())
-  );
-
   const yearsIn = (since: string) => new Date().getFullYear() - Number(since);
+
+  // Поиск по всем сотрудникам
+  const searchResults = teamSearch.trim()
+    ? employees.filter(e =>
+        e.name.toLowerCase().includes(teamSearch.toLowerCase()) ||
+        e.role.toLowerCase().includes(teamSearch.toLowerCase()) ||
+        e.directorate.toLowerCase().includes(teamSearch.toLowerCase())
+      )
+    : null;
+
+  // Сотрудники по дирекции
+  const byDir = (dir: string) => employees.filter(e => e.directorate === dir);
+  const headOf = (dir: string) => employees.find(e => e.directorate === dir && e.isHead);
 
   return (
     <div className="min-h-screen" style={{ background: '#f0f8ff' }}>
@@ -168,16 +186,15 @@ const Index = () => {
               <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-brand-pink ring-2 ring-white" />
             </Button>
             <Avatar className="h-9 w-9 border-2" style={{ borderColor: '#A8E63D' }}>
-              <AvatarFallback className="font-bold text-white" style={{ background: '#A8E63D', color: '#1a1a1a' }}>Я</AvatarFallback>
+              <AvatarFallback className="font-bold" style={{ background: '#A8E63D', color: '#1a1a1a' }}>Я</AvatarFallback>
             </Avatar>
           </div>
         </div>
       </header>
 
-      {/* Hero — фото полностью */}
+      {/* Hero */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-8">
         <div className="rounded-3xl overflow-hidden shadow-2xl animate-scale-in" style={{ background: '#00B5F0' }}>
-          {/* Фото команды — полное, без обрезки */}
           <div className="relative">
             <img
               src="https://cdn.poehali.dev/projects/b3633dd3-0424-4d83-af84-1d2d5d55dfc4/bucket/cb4ec47f-04ed-494b-9fbf-54da89bba876.jpg"
@@ -185,18 +202,15 @@ const Index = () => {
               className="w-full object-contain"
               style={{ maxHeight: '420px', objectPosition: 'center top' }}
             />
-            {/* Gradient overlay снизу */}
             <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
               style={{ background: 'linear-gradient(to top, #00B5F0 0%, transparent 100%)' }} />
           </div>
-          {/* Текст под фото */}
           <div className="px-8 sm:px-12 pb-8 text-white -mt-4 relative z-10">
             <div className="flex flex-wrap items-end gap-4 justify-between">
               <div>
                 <p className="text-white/70 text-sm font-semibold uppercase tracking-widest mb-1">Внутренний портал</p>
                 <h1 className="font-display font-black leading-none" style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', letterSpacing: '-2px' }}>
-                  Привет,{' '}
-                  <span style={{ color: '#FF6EC7' }}>GreenTeam!</span>
+                  Привет, <span style={{ color: '#FF6EC7' }}>GreenTeam!</span>
                 </h1>
                 <p className="mt-2 text-white/85 text-base sm:text-lg max-w-xl">
                   Новости, события и жизнь компании Greenway Global — в одном месте.
@@ -204,12 +218,12 @@ const Index = () => {
               </div>
               <div className="flex gap-3 flex-shrink-0">
                 <div className="rounded-2xl px-5 py-3 text-center" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)' }}>
-                  <p className="font-display font-black text-2xl">248</p>
+                  <p className="font-display font-black text-2xl">{employees.length}</p>
                   <p className="text-xs text-white/80">сотрудников</p>
                 </div>
                 <div className="rounded-2xl px-5 py-3 text-center" style={{ background: 'rgba(168,230,61,0.3)', backdropFilter: 'blur(8px)' }}>
                   <p className="font-display font-black text-2xl">12</p>
-                  <p className="text-xs text-white/80">отделов</p>
+                  <p className="text-xs text-white/80">дирекций</p>
                 </div>
               </div>
             </div>
@@ -227,8 +241,7 @@ const Index = () => {
               className="flex items-center gap-2 px-4 py-2.5 rounded-full whitespace-nowrap text-sm font-bold transition-all"
               style={active === n.id
                 ? { background: '#00B5F0', color: '#fff', boxShadow: '0 4px 20px rgba(0,181,240,0.4)' }
-                : { background: '#fff', color: '#555', border: '1.5px solid #e0e0e0' }
-              }
+                : { background: '#fff', color: '#555', border: '1.5px solid #e0e0e0' }}
             >
               <Icon name={n.icon} size={17} />
               {n.label}
@@ -238,16 +251,16 @@ const Index = () => {
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 grid lg:grid-cols-3 gap-6">
-        {/* Main column */}
         <div className="lg:col-span-2 space-y-5">
 
+          {/* ЛЕНТА */}
           {active === 'feed' && (
             <div className="space-y-4 animate-fade-in">
               {feed.map((post, i) => (
                 <Card key={i} className="p-5 rounded-2xl border-0 shadow-sm hover-lift bg-white">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-11 w-11">
-                      <AvatarFallback className={colorMap[post.color]} style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900 }}>
+                      <AvatarFallback className={colorMap[post.color]} style={{ fontFamily: 'Nunito', fontWeight: 900 }}>
                         {initials(post.author)}
                       </AvatarFallback>
                     </Avatar>
@@ -277,11 +290,12 @@ const Index = () => {
             </div>
           )}
 
+          {/* СОБЫТИЯ */}
           {active === 'events' && (
             <div className="space-y-4 animate-fade-in">
               {events.map((e, i) => (
                 <Card key={i} className="p-5 rounded-2xl border-0 shadow-sm hover-lift bg-white flex items-center gap-4">
-                  <div className={`h-14 w-14 shrink-0 rounded-2xl flex flex-col items-center justify-center ${colorMap[e.color]}`}>
+                  <div className={`h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center ${colorMap[e.color]}`}>
                     <Icon name="Calendar" size={22} />
                   </div>
                   <div className="flex-1">
@@ -300,6 +314,7 @@ const Index = () => {
             </div>
           )}
 
+          {/* ДНИ РОЖДЕНИЯ */}
           {active === 'birthdays' && (
             <div className="space-y-5 animate-fade-in">
               <div className="space-y-3">
@@ -319,8 +334,7 @@ const Index = () => {
                     </div>
                     {b.today
                       ? <Badge className="rounded-full text-white font-bold" style={{ background: '#FF6EC7' }}>Сегодня 🎉</Badge>
-                      : <span className="text-sm font-semibold text-muted-foreground">{b.date}</span>
-                    }
+                      : <span className="text-sm font-semibold text-muted-foreground">{b.date}</span>}
                   </Card>
                 ))}
               </div>
@@ -331,7 +345,7 @@ const Index = () => {
                 <div className="grid sm:grid-cols-3 gap-3">
                   {anniversaries.map((a, i) => (
                     <Card key={i} className="p-4 rounded-2xl border-0 shadow-sm hover-lift bg-white text-center">
-                      <div className="mx-auto h-14 w-14 rounded-full flex items-center justify-center font-display font-black text-xl text-white"
+                      <div className="mx-auto h-14 w-14 rounded-full flex items-center justify-center font-display font-black text-xl"
                         style={{ background: '#A8E63D', color: '#1a1a1a' }}>
                         {a.years}
                       </div>
@@ -347,90 +361,176 @@ const Index = () => {
             </div>
           )}
 
+          {/* ДИРЕКЦИЯ */}
           {active === 'team' && (
-            <div className="animate-fade-in">
-              <h3 className="font-display font-black text-xl mb-4 flex items-center gap-2" style={{ color: '#00B5F0' }}>
-                <Icon name="Network" size={22} /> Структура дирекции
-              </h3>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {directors.map((d, i) => (
-                  <Card key={i} className="p-5 rounded-2xl border-0 shadow-sm hover-lift bg-white">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-14 w-14 border-2" style={{ borderColor: '#00B5F0' }}>
-                        <AvatarFallback className="font-black text-white" style={{ background: '#00B5F0', fontFamily: 'Nunito' }}>
-                          {initials(d.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold">{d.name}</p>
-                        <p className="text-sm font-semibold" style={{ color: '#00B5F0' }}>{d.role}</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="mt-3 rounded-full">{d.dept}</Badge>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {active === 'profiles' && (
             <div className="animate-fade-in space-y-4">
-              <div className="flex items-center gap-3">
+
+              {/* Поиск + кнопка добавить */}
+              <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Поиск по имени, отделу..."
+                    value={teamSearch}
+                    onChange={e => setTeamSearch(e.target.value)}
+                    placeholder="Поиск по имени, должности, дирекции..."
                     className="rounded-full pl-9"
                   />
                 </div>
-                <Badge variant="secondary" className="rounded-full shrink-0">{filtered.length} чел.</Badge>
+                <Button
+                  className="rounded-full font-bold text-white shrink-0"
+                  style={{ background: '#FF6EC7' }}
+                  onClick={() => { setEditEmp(emptyEmployee()); setIsNewEmp(true); }}
+                >
+                  <Icon name="Plus" size={16} className="mr-1" /> Сотрудник
+                </Button>
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {filtered.map(p => (
-                  <Card key={p.id} className="rounded-2xl border-0 shadow-sm hover-lift bg-white overflow-hidden">
-                    {/* Цветная шапка */}
-                    <div className="h-16 relative" style={{ background: p.color + '22' }}>
-                      <div className="absolute -bottom-7 left-4">
-                        <Avatar className="h-14 w-14 border-4 border-white shadow-md cursor-pointer"
-                          onClick={() => setViewProfile(p)}>
-                          <AvatarImage src={p.photo} />
-                          <AvatarFallback className="font-black text-white text-lg" style={{ background: p.color }}>
-                            {initials(p.name)}
+
+              {/* Результаты поиска */}
+              {searchResults && (
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-muted-foreground px-1">
+                    Найдено: {searchResults.length} чел.
+                  </p>
+                  {searchResults.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">Никого не найдено</p>
+                  )}
+                  {searchResults.map(emp => {
+                    const dirIdx = DIRECTORATES.indexOf(emp.directorate);
+                    const color = DIR_COLORS[dirIdx] ?? '#00B5F0';
+                    return (
+                      <Card key={emp.id} className="p-4 rounded-2xl border-0 shadow-sm bg-white flex items-center gap-3 hover-lift cursor-pointer"
+                        onClick={() => setViewEmp(emp)}>
+                        <Avatar className="h-11 w-11 shrink-0">
+                          <AvatarImage src={emp.photo} />
+                          <AvatarFallback className="font-black text-white" style={{ background: color }}>
+                            {initials(emp.name)}
                           </AvatarFallback>
                         </Avatar>
-                      </div>
-                      <button
-                        onClick={() => setEditProfile({ ...p })}
-                        className="absolute top-2 right-3 h-7 w-7 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                        style={{ background: 'rgba(255,255,255,0.7)' }}
-                      >
-                        <Icon name="Pencil" size={13} className="text-gray-600" />
-                      </button>
-                    </div>
-                    <div className="pt-9 px-4 pb-4">
-                      <p className="font-black text-base cursor-pointer hover:underline" onClick={() => setViewProfile(p)}>{p.name}</p>
-                      <p className="text-sm font-semibold" style={{ color: p.color }}>{p.role}</p>
-                      <div className="mt-2 flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="rounded-full text-xs">{p.dept}</Badge>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Icon name="CalendarCheck" size={12} /> с {p.since} г.
-                          {yearsIn(p.since) > 0 && <span className="font-semibold" style={{ color: '#4caf20' }}>· {yearsIn(p.since)} лет</span>}
-                        </span>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <a href={`tel:${p.phone}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-brand-blue transition-colors">
-                          <Icon name="Phone" size={13} /> {p.phone}
-                        </a>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold truncate">{emp.name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{emp.role}</p>
+                        </div>
+                        <Badge variant="secondary" className="rounded-full text-xs shrink-0">{emp.directorate}</Badge>
+                        {emp.isHead && <Icon name="Crown" size={16} style={{ color: '#FF9F43', flexShrink: 0 }} />}
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 12 дирекций — аккордеон */}
+              {!searchResults && (
+                <div className="space-y-3">
+                  {DIRECTORATES.map((dir, idx) => {
+                    const color = DIR_COLORS[idx];
+                    const members = byDir(dir);
+                    const head = headOf(dir);
+                    const isOpen = expandedDir === dir;
+
+                    return (
+                      <Card key={dir} className="rounded-2xl border-0 shadow-sm overflow-hidden bg-white">
+                        {/* Заголовок дирекции */}
+                        <button
+                          className="w-full flex items-center gap-3 p-4 text-left transition-colors hover:bg-gray-50"
+                          onClick={() => setExpandedDir(isOpen ? null : dir)}
+                        >
+                          <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                            style={{ background: color + '22' }}>
+                            <Icon name="Building2" size={20} style={{ color }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-black text-base" style={{ color }}>{dir}</p>
+                            {head ? (
+                              <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                                <Icon name="Crown" size={11} style={{ color: '#FF9F43' }} />
+                                {head.name} · {head.role}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground italic">Руководитель не назначен</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant="secondary" className="rounded-full text-xs">
+                              {members.length} чел.
+                            </Badge>
+                            <Icon name={isOpen ? 'ChevronUp' : 'ChevronDown'} size={18} className="text-muted-foreground" />
+                          </div>
+                        </button>
+
+                        {/* Раскрытый список */}
+                        {isOpen && (
+                          <div className="border-t" style={{ borderColor: color + '33' }}>
+                            {/* Руководитель */}
+                            {head && (
+                              <div className="px-4 py-3" style={{ background: color + '0d' }}>
+                                <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color }}>
+                                  Руководитель
+                                </p>
+                                <div className="flex items-center gap-3 cursor-pointer" onClick={() => setViewEmp(head)}>
+                                  <Avatar className="h-12 w-12 border-2" style={{ borderColor: color }}>
+                                    <AvatarImage src={head.photo} />
+                                    <AvatarFallback className="font-black text-white" style={{ background: color }}>
+                                      {initials(head.name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-black">{head.name}</p>
+                                    <p className="text-sm font-semibold" style={{ color }}>{head.role}</p>
+                                    {head.phone && <p className="text-xs text-muted-foreground">{head.phone}</p>}
+                                  </div>
+                                  <Icon name="Crown" size={18} style={{ color: '#FF9F43', marginLeft: 'auto' }} />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Команда */}
+                            {members.filter(m => !m.isHead).length > 0 && (
+                              <div className="px-4 py-3 space-y-2">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">
+                                  Команда
+                                </p>
+                                {members.filter(m => !m.isHead).map(emp => (
+                                  <div key={emp.id}
+                                    className="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
+                                    onClick={() => setViewEmp(emp)}>
+                                    <Avatar className="h-9 w-9">
+                                      <AvatarImage src={emp.photo} />
+                                      <AvatarFallback className="font-black text-white text-sm" style={{ background: color + 'aa' }}>
+                                        {initials(emp.name)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                      <p className="font-semibold text-sm">{emp.name}</p>
+                                      <p className="text-xs text-muted-foreground">{emp.role}</p>
+                                    </div>
+                                    {emp.tg && <p className="text-xs text-muted-foreground">{emp.tg}</p>}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {members.length === 0 && (
+                              <p className="px-4 py-4 text-sm text-muted-foreground italic">Сотрудники ещё не добавлены</p>
+                            )}
+
+                            <div className="px-4 py-3 border-t" style={{ borderColor: color + '22' }}>
+                              <Button size="sm" variant="outline" className="rounded-full text-xs font-bold w-full"
+                                style={{ borderColor: color, color }}
+                                onClick={(e) => { e.stopPropagation(); setEditEmp({ ...emptyEmployee(), directorate: dir }); setIsNewEmp(true); }}>
+                                <Icon name="UserPlus" size={14} className="mr-1" /> Добавить сотрудника
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
+          {/* БОТТЕНДЕР */}
           {active === 'bot' && (
             <div className="animate-fade-in">
               <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
@@ -449,25 +549,21 @@ const Index = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {['Где найти онбординг?', 'Как получить доступы?', 'Контакты HR'].map((q) => (
-                      <button key={q} className="text-xs px-3 py-2 rounded-full bg-white border-2 font-semibold transition-colors hover:border-brand-blue hover:text-brand-blue"
-                        style={{ borderColor: '#e0e0e0' }}>
-                        {q}
-                      </button>
+                      <button key={q} className="text-xs px-3 py-2 rounded-full bg-white border-2 font-semibold transition-colors hover:border-blue-400 hover:text-blue-500"
+                        style={{ borderColor: '#e0e0e0' }}>{q}</button>
                     ))}
                   </div>
                 </div>
                 <div className="p-4 flex gap-2 border-t bg-white">
                   <Input value={botMsg} onChange={(e) => setBotMsg(e.target.value)}
-                    placeholder="Напиши сообщение..."
-                    className="rounded-full" />
-                  <Button size="icon" className="rounded-full shrink-0 text-white" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
+                    placeholder="Напиши сообщение..." className="rounded-full" />
+                  <Button size="icon" className="rounded-full shrink-0" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
                     <Icon name="Send" size={18} />
                   </Button>
                 </div>
               </Card>
             </div>
           )}
-
         </div>
 
         {/* Sidebar */}
@@ -497,150 +593,217 @@ const Index = () => {
             </div>
           </Card>
 
-          <Card className="p-5 rounded-2xl border-0 shadow-sm bg-white">
-            <p className="font-bold flex items-center gap-2 mb-3" style={{ color: '#00B5F0' }}>
-              <Icon name="Bell" size={18} /> Уведомления
-            </p>
-            <ul className="space-y-3 text-sm">
-              <li className="flex gap-2 items-start">
-                <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full flex items-center justify-center" style={{ background: '#A8E63D' }}>
-                  <Icon name="CalendarDays" size={12} className="text-[#1a1a1a]" />
-                </span>
-                Корпоратив через 8 дней
-              </li>
-              <li className="flex gap-2 items-start">
-                <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full flex items-center justify-center" style={{ background: '#FF6EC7' }}>
-                  <Icon name="Award" size={12} className="text-white" />
-                </span>
-                У Дмитрия 5 лет в компании
-              </li>
-              <li className="flex gap-2 items-start">
-                <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full flex items-center justify-center" style={{ background: '#00B5F0' }}>
-                  <Icon name="GraduationCap" size={12} className="text-white" />
-                </span>
-                Новый курс в Боттендере
-              </li>
-            </ul>
-          </Card>
+          {active === 'team' && (
+            <Card className="p-5 rounded-2xl border-0 shadow-sm bg-white">
+              <p className="font-bold flex items-center gap-2 mb-3" style={{ color: '#00B5F0' }}>
+                <Icon name="Network" size={18} /> Дирекции
+              </p>
+              <div className="space-y-1">
+                {DIRECTORATES.map((dir, idx) => {
+                  const color = DIR_COLORS[idx];
+                  const count = byDir(dir).length;
+                  return (
+                    <button key={dir}
+                      className="w-full flex items-center gap-2 py-1.5 px-2 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                      onClick={() => { setExpandedDir(dir); setTeamSearch(''); }}>
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: color }} />
+                      <span className="text-xs font-semibold flex-1 truncate">{dir}</span>
+                      <span className="text-xs text-muted-foreground">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+          {active !== 'team' && (
+            <Card className="p-5 rounded-2xl border-0 shadow-sm bg-white">
+              <p className="font-bold flex items-center gap-2 mb-3" style={{ color: '#00B5F0' }}>
+                <Icon name="Bell" size={18} /> Уведомления
+              </p>
+              <ul className="space-y-3 text-sm">
+                <li className="flex gap-2 items-start">
+                  <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full flex items-center justify-center" style={{ background: '#A8E63D' }}>
+                    <Icon name="CalendarDays" size={12} className="text-[#1a1a1a]" />
+                  </span>
+                  Корпоратив через 8 дней
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full flex items-center justify-center" style={{ background: '#FF6EC7' }}>
+                    <Icon name="Award" size={12} className="text-white" />
+                  </span>
+                  У Дмитрия 5 лет в компании
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full flex items-center justify-center" style={{ background: '#00B5F0' }}>
+                    <Icon name="GraduationCap" size={12} className="text-white" />
+                  </span>
+                  Новый курс в Боттендере
+                </li>
+              </ul>
+            </Card>
+          )}
         </aside>
       </main>
 
-      {/* Диалог редактирования */}
-      <Dialog open={!!editProfile} onOpenChange={() => setEditProfile(null)}>
-        <DialogContent className="rounded-2xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display font-black" style={{ color: '#00B5F0' }}>
-              Редактировать профиль
-            </DialogTitle>
-          </DialogHeader>
-          {editProfile && (
-            <div className="space-y-4 mt-2">
-              {/* Фото */}
-              <div className="flex items-center gap-4">
-                <Avatar className="h-20 w-20 border-4 border-white shadow-lg cursor-pointer" onClick={() => fileRef.current?.click()}>
-                  <AvatarImage src={editProfile.photo} />
-                  <AvatarFallback className="font-black text-white text-2xl" style={{ background: editProfile.color }}>
-                    {initials(editProfile.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => fileRef.current?.click()}>
-                    <Icon name="Upload" size={14} className="mr-1" /> Загрузить фото
-                  </Button>
-                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG до 5 МБ</p>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+      {/* Просмотр сотрудника */}
+      <Dialog open={!!viewEmp} onOpenChange={() => setViewEmp(null)}>
+        <DialogContent className="rounded-2xl max-w-sm p-0 overflow-hidden">
+          {viewEmp && (() => {
+            const dirIdx = DIRECTORATES.indexOf(viewEmp.directorate);
+            const color = DIR_COLORS[dirIdx] ?? '#00B5F0';
+            return (
+              <>
+                <div className="h-24 relative" style={{ background: color }}>
+                  <div className="absolute inset-0 opacity-20"
+                    style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
+                  <div className="absolute -bottom-8 left-5">
+                    <Avatar className="h-16 w-16 border-4 border-white shadow-xl">
+                      <AvatarImage src={viewEmp.photo} />
+                      <AvatarFallback className="font-black text-white text-xl" style={{ background: color }}>
+                        {initials(viewEmp.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  {viewEmp.isHead && (
+                    <div className="absolute top-3 right-4 flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
+                      style={{ background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
+                      <Icon name="Crown" size={13} /> Руководитель
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <Label className="text-xs font-bold text-muted-foreground">Имя и фамилия</Label>
-                  <Input className="mt-1 rounded-xl" value={editProfile.name}
-                    onChange={e => setEditProfile({ ...editProfile, name: e.target.value })} />
+                <div className="pt-12 px-5 pb-5 space-y-3">
+                  <div>
+                    <h2 className="font-display font-black text-xl">{viewEmp.name}</h2>
+                    <p className="font-semibold text-sm" style={{ color }}>{viewEmp.role}</p>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <Badge variant="secondary" className="rounded-full text-xs">{viewEmp.directorate}</Badge>
+                      {yearsIn(viewEmp.since) > 0 && (
+                        <Badge className="rounded-full text-xs font-bold" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
+                          {yearsIn(viewEmp.since)} лет в команде
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    {viewEmp.phone && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Icon name="Phone" size={15} style={{ color } as React.CSSProperties} />
+                        <a href={`tel:${viewEmp.phone}`} className="hover:underline">{viewEmp.phone}</a>
+                      </div>
+                    )}
+                    {viewEmp.tg && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Icon name="Send" size={15} style={{ color } as React.CSSProperties} />
+                        <span>{viewEmp.tg}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Icon name="CalendarCheck" size={15} style={{ color } as React.CSSProperties} />
+                      <span>В компании с {viewEmp.since} года</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <Button className="flex-1 rounded-full font-bold" variant="outline"
+                      onClick={() => { setViewEmp(null); setEditEmp({ ...viewEmp }); setIsNewEmp(false); }}>
+                      <Icon name="Pencil" size={14} className="mr-1" /> Изменить
+                    </Button>
+                    <Button className="rounded-full font-bold" variant="outline"
+                      style={{ borderColor: '#ff4444', color: '#ff4444' }}
+                      onClick={() => deleteEmployee(viewEmp.id)}>
+                      <Icon name="Trash2" size={14} />
+                    </Button>
+                  </div>
                 </div>
-                <div className="col-span-2">
-                  <Label className="text-xs font-bold text-muted-foreground">Должность</Label>
-                  <Input className="mt-1 rounded-xl" value={editProfile.role}
-                    onChange={e => setEditProfile({ ...editProfile, role: e.target.value })} />
-                </div>
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">Отдел</Label>
-                  <Input className="mt-1 rounded-xl" value={editProfile.dept}
-                    onChange={e => setEditProfile({ ...editProfile, dept: e.target.value })} />
-                </div>
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">В компании с</Label>
-                  <Input className="mt-1 rounded-xl" value={editProfile.since}
-                    onChange={e => setEditProfile({ ...editProfile, since: e.target.value })} />
-                </div>
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">Телефон</Label>
-                  <Input className="mt-1 rounded-xl" value={editProfile.phone}
-                    onChange={e => setEditProfile({ ...editProfile, phone: e.target.value })} />
-                </div>
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">Telegram</Label>
-                  <Input className="mt-1 rounded-xl" value={editProfile.tg}
-                    onChange={e => setEditProfile({ ...editProfile, tg: e.target.value })} />
-                </div>
-              </div>
-              <Button className="w-full rounded-full font-black text-white mt-2" style={{ background: '#00B5F0' }} onClick={saveProfile}>
-                Сохранить
-              </Button>
-            </div>
-          )}
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
-      {/* Диалог просмотра профиля */}
-      <Dialog open={!!viewProfile} onOpenChange={() => setViewProfile(null)}>
-        <DialogContent className="rounded-2xl max-w-sm p-0 overflow-hidden">
-          {viewProfile && (
-            <>
-              <div className="h-28 relative" style={{ background: viewProfile.color }}>
-                <div className="absolute inset-0 opacity-20"
-                  style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
-                <div className="absolute -bottom-10 left-6">
-                  <Avatar className="h-20 w-20 border-4 border-white shadow-xl">
-                    <AvatarImage src={viewProfile.photo} />
-                    <AvatarFallback className="font-black text-white text-2xl" style={{ background: viewProfile.color }}>
-                      {initials(viewProfile.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              </div>
-              <div className="pt-14 px-6 pb-6 space-y-4">
+      {/* Редактирование / добавление сотрудника */}
+      <Dialog open={!!editEmp} onOpenChange={() => { setEditEmp(null); setIsNewEmp(false); }}>
+        <DialogContent className="rounded-2xl max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display font-black" style={{ color: '#00B5F0' }}>
+              {isNewEmp ? 'Новый сотрудник' : 'Редактировать профиль'}
+            </DialogTitle>
+          </DialogHeader>
+          {editEmp && (
+            <div className="space-y-4 mt-2">
+              {/* Фото */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20 border-4 border-white shadow-lg cursor-pointer" onClick={() => photoRef.current?.click()}>
+                  <AvatarImage src={editEmp.photo} />
+                  <AvatarFallback className="font-black text-white text-2xl" style={{ background: '#00B5F0' }}>
+                    {editEmp.name ? initials(editEmp.name) : '?'}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
-                  <h2 className="font-display font-black text-2xl">{viewProfile.name}</h2>
-                  <p className="font-semibold" style={{ color: viewProfile.color }}>{viewProfile.role}</p>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    <Badge variant="secondary" className="rounded-full">{viewProfile.dept}</Badge>
-                    {yearsIn(viewProfile.since) > 0 && (
-                      <Badge className="rounded-full text-white" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
-                        {yearsIn(viewProfile.since)} {yearsIn(viewProfile.since) === 1 ? 'год' : 'лет'} в команде
-                      </Badge>
-                    )}
-                  </div>
+                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => photoRef.current?.click()}>
+                    <Icon name="Upload" size={14} className="mr-1" /> Загрузить фото
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG</p>
+                  <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handleEmpPhoto} />
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Icon name="Phone" size={15} style={{ color: viewProfile.color } as React.CSSProperties} />
-                    <a href={`tel:${viewProfile.phone}`} className="hover:underline">{viewProfile.phone}</a>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Icon name="Send" size={15} style={{ color: viewProfile.color } as React.CSSProperties} />
-                    <span>{viewProfile.tg}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Icon name="CalendarCheck" size={15} style={{ color: viewProfile.color } as React.CSSProperties} />
-                    <span>В компании с {viewProfile.since} года</span>
-                  </div>
-                </div>
-                <Button className="w-full rounded-full font-bold" variant="outline"
-                  onClick={() => { setViewProfile(null); setEditProfile({ ...viewProfile }); }}>
-                  <Icon name="Pencil" size={14} className="mr-2" /> Редактировать
-                </Button>
               </div>
-            </>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label className="text-xs font-bold text-muted-foreground">Имя и фамилия *</Label>
+                  <Input className="mt-1 rounded-xl" placeholder="Иванова Мария" value={editEmp.name}
+                    onChange={e => setEditEmp({ ...editEmp, name: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs font-bold text-muted-foreground">Должность *</Label>
+                  <Input className="mt-1 rounded-xl" placeholder="Менеджер по продажам" value={editEmp.role}
+                    onChange={e => setEditEmp({ ...editEmp, role: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs font-bold text-muted-foreground">Дирекция *</Label>
+                  <Select value={editEmp.directorate} onValueChange={v => setEditEmp({ ...editEmp, directorate: v })}>
+                    <SelectTrigger className="mt-1 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIRECTORATES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">Телефон</Label>
+                  <Input className="mt-1 rounded-xl" placeholder="+7 900 000-00-00" value={editEmp.phone}
+                    onChange={e => setEditEmp({ ...editEmp, phone: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">Telegram</Label>
+                  <Input className="mt-1 rounded-xl" placeholder="@username" value={editEmp.tg}
+                    onChange={e => setEditEmp({ ...editEmp, tg: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">В компании с (год)</Label>
+                  <Input className="mt-1 rounded-xl" placeholder="2022" value={editEmp.since}
+                    onChange={e => setEditEmp({ ...editEmp, since: e.target.value })} />
+                </div>
+                <div className="flex items-end pb-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" className="h-4 w-4 rounded accent-pink-400"
+                      checked={editEmp.isHead}
+                      onChange={e => setEditEmp({ ...editEmp, isHead: e.target.checked })} />
+                    <span className="text-sm font-bold flex items-center gap-1">
+                      <Icon name="Crown" size={15} style={{ color: '#FF9F43' }} /> Руководитель
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <Button
+                className="w-full rounded-full font-black text-white mt-2"
+                style={{ background: '#00B5F0' }}
+                disabled={!editEmp.name || !editEmp.role}
+                onClick={saveEmployee}>
+                {isNewEmp ? 'Добавить сотрудника' : 'Сохранить изменения'}
+              </Button>
+            </div>
           )}
         </DialogContent>
       </Dialog>
