@@ -14,7 +14,59 @@ const nav = [
   { id: 'events', label: 'События', icon: 'CalendarDays' },
   { id: 'birthdays', label: 'Дни рождения', icon: 'Cake' },
   { id: 'team', label: 'Дирекция', icon: 'Network' },
-  { id: 'bot', label: 'Боттендер', icon: 'Bot' },
+  { id: 'onboarding', label: 'Онбординг', icon: 'GraduationCap' },
+  { id: 'bot', label: 'Чат-бот', icon: 'Bot' },
+];
+
+const onboardingSteps = [
+  {
+    day: 'День 1',
+    title: 'Добро пожаловать в GreenTeam!',
+    color: '#FF6EC7',
+    icon: 'Sparkles',
+    tasks: [
+      'Познакомься с командой — загляни в раздел «Дирекция»',
+      'Получи доступы к корпоративным системам у HR',
+      'Изучи корпоративные ценности и миссию Greenway Global',
+      'Подпишись на корпоративный Telegram-канал',
+    ],
+  },
+  {
+    day: 'День 2–3',
+    title: 'Погружение в продукт',
+    color: '#00B5F0',
+    icon: 'Package',
+    tasks: [
+      'Изучи линейку продуктов Greenway Global',
+      'Пройди вводный курс по экосистеме бренда',
+      'Познакомься с системой партнёрских уровней',
+      'Посмотри видео-презентацию от руководителя дирекции',
+    ],
+  },
+  {
+    day: 'День 4–5',
+    title: 'Инструменты и процессы',
+    color: '#A8E63D',
+    icon: 'Wrench',
+    tasks: [
+      'Освой CRM-систему — посмотри инструкцию',
+      'Познакомься с процессом постановки задач',
+      'Узнай о системе мотивации и бонусах',
+      'Запланируй встречу с наставником',
+    ],
+  },
+  {
+    day: 'Неделя 2',
+    title: 'Первые результаты',
+    color: '#6C63FF',
+    icon: 'TrendingUp',
+    tasks: [
+      'Поставь первые цели на месяц вместе с руководителем',
+      'Прими участие в командной планёрке',
+      'Пройди тест по знанию продукта',
+      'Оставь отзыв об онбординге для HR 💚',
+    ],
+  },
 ];
 
 const DIRECTORATES = [
@@ -530,51 +582,128 @@ const Index = () => {
             </div>
           )}
 
-          {/* БОТТЕНДЕР */}
-          {active === 'bot' && (
-            <div className="animate-fade-in">
-              <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
-                <div className="p-5 text-white flex items-center gap-3" style={{ background: '#00B5F0' }}>
-                  <div className="h-11 w-11 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                    <Icon name="Bot" size={24} />
-                  </div>
-                  <div>
-                    <p className="font-display font-black text-lg">Боттендер</p>
-                    <p className="text-xs text-white/80">Помощник для новичков · онлайн</p>
+          {/* ОНБОРДИНГ */}
+          {active === 'onboarding' && (
+            <div className="animate-fade-in space-y-4">
+              {/* Hero онбординга */}
+              <div className="rounded-2xl p-6 text-white relative overflow-hidden" style={{ background: '#00B5F0' }}>
+                <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-20" style={{ background: '#FF6EC7' }} />
+                <div className="absolute right-8 bottom-0 h-16 w-16 rounded-full opacity-20" style={{ background: '#A8E63D' }} />
+                <div className="relative">
+                  <Badge className="bg-white/20 text-white border-0 mb-3">Новый сотрудник</Badge>
+                  <h2 className="font-display font-black text-2xl sm:text-3xl">Добро пожаловать<br/>в <span style={{ color: '#FF6EC7' }}>GreenTeam!</span></h2>
+                  <p className="mt-2 text-white/85 text-sm max-w-md">
+                    Мы рады, что ты с нами! Этот план поможет тебе быстро влиться в команду и начать работу.
+                  </p>
+                  <div className="mt-4 flex gap-3">
+                    <div className="rounded-xl px-4 py-2 text-center" style={{ background: 'rgba(255,255,255,0.2)' }}>
+                      <p className="font-display font-black text-xl">4</p>
+                      <p className="text-xs text-white/80">этапа</p>
+                    </div>
+                    <div className="rounded-xl px-4 py-2 text-center" style={{ background: 'rgba(168,230,61,0.3)' }}>
+                      <p className="font-display font-black text-xl">14</p>
+                      <p className="text-xs text-white/80">заданий</p>
+                    </div>
                   </div>
                 </div>
-                <div className="p-5 space-y-4" style={{ background: '#f0f8ff' }}>
-                  <div className="max-w-[80%] bg-white rounded-2xl rounded-tl-sm p-3 shadow-sm">
-                    <p className="text-sm">Привет! 👋 Я Боттендер. Помогу освоиться в GreenTeam. Что тебя интересует?</p>
+              </div>
+
+              {/* Шаги онбординга */}
+              {onboardingSteps.map((step, si) => (
+                <Card key={si} className="rounded-2xl border-0 shadow-sm overflow-hidden bg-white">
+                  <div className="flex items-center gap-3 p-4" style={{ borderLeft: `4px solid ${step.color}` }}>
+                    <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: step.color + '20' }}>
+                      <Icon name={step.icon} size={22} style={{ color: step.color }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider" style={{ color: step.color }}>{step.day}</p>
+                      <p className="font-black text-base">{step.title}</p>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {['Где найти онбординг?', 'Как получить доступы?', 'Контакты HR'].map((q) => (
-                      <button key={q} className="text-xs px-3 py-2 rounded-full bg-white border-2 font-semibold transition-colors hover:border-blue-400 hover:text-blue-500"
-                        style={{ borderColor: '#e0e0e0' }}>{q}</button>
+                  <div className="px-4 pb-4 space-y-2">
+                    {step.tasks.map((task, ti) => (
+                      <label key={ti} className="flex items-start gap-3 cursor-pointer group">
+                        <div className="mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors group-hover:border-current"
+                          style={{ borderColor: step.color + '60' }}>
+                          <div className="h-2.5 w-2.5 rounded-full" style={{ background: step.color + '40' }} />
+                        </div>
+                        <span className="text-sm leading-relaxed">{task}</span>
+                      </label>
                     ))}
                   </div>
+                </Card>
+              ))}
+
+              {/* Кнопка чат-бота */}
+              <Card className="rounded-2xl border-0 shadow-sm p-5 bg-white flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0" style={{ background: '#FF6EC7' }}>
+                  <Icon name="Bot" size={26} className="text-white" />
                 </div>
-                <div className="p-4 flex gap-2 border-t bg-white">
-                  <Input value={botMsg} onChange={(e) => setBotMsg(e.target.value)}
-                    placeholder="Напиши сообщение..." className="rounded-full" />
-                  <Button size="icon" className="rounded-full shrink-0" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
-                    <Icon name="Send" size={18} />
-                  </Button>
+                <div className="flex-1">
+                  <p className="font-black">Есть вопросы?</p>
+                  <p className="text-sm text-muted-foreground">Наш чат-бот ответит на любой вопрос по работе в команде</p>
                 </div>
+                <Button className="rounded-full font-bold text-white shrink-0" style={{ background: '#FF6EC7' }}
+                  onClick={() => window.open('https://t.me/green_team_2_0_bot', '_blank')}>
+                  Открыть бот
+                </Button>
               </Card>
+            </div>
+          )}
+
+          {/* ЧАТ-БОТ */}
+          {active === 'bot' && (
+            <div className="animate-fade-in flex flex-col items-center justify-center py-8">
+              <div className="w-full max-w-md text-center">
+                {/* Большая иконка */}
+                <div className="mx-auto h-28 w-28 rounded-3xl flex items-center justify-center shadow-xl mb-6"
+                  style={{ background: 'linear-gradient(135deg, #00B5F0, #FF6EC7)' }}>
+                  <Icon name="Bot" size={52} className="text-white" />
+                </div>
+                <h2 className="font-display font-black text-3xl mb-2">Чат-бот<br/><span style={{ color: '#FF6EC7' }}>GreenTeam</span></h2>
+                <p className="text-muted-foreground mb-2">@green_team_2_0_bot</p>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-8">
+                  Задай любой вопрос — о продуктах, процессах, команде или онбординге. Бот работает 24/7.
+                </p>
+
+                <Button
+                  className="rounded-full font-black text-white px-8 py-6 text-lg shadow-lg hover:scale-105 transition-transform"
+                  style={{ background: '#00B5F0' }}
+                  onClick={() => window.open('https://t.me/green_team_2_0_bot', '_blank')}
+                >
+                  <Icon name="Send" size={20} className="mr-2" />
+                  Открыть в Telegram
+                </Button>
+
+                <div className="mt-8 grid grid-cols-3 gap-3 text-center">
+                  {[
+                    { icon: 'Clock', label: 'Работает 24/7' },
+                    { icon: 'Zap', label: 'Быстрые ответы' },
+                    { icon: 'ShieldCheck', label: 'Корпоративный' },
+                  ].map((f, i) => (
+                    <div key={i} className="bg-white rounded-2xl p-3 shadow-sm">
+                      <Icon name={f.icon} size={22} className="mx-auto mb-1" style={{ color: i === 0 ? '#FF6EC7' : i === 1 ? '#00B5F0' : '#A8E63D' }} />
+                      <p className="text-xs font-semibold">{f.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
 
         {/* Sidebar */}
         <aside className="space-y-4">
-          <Card className="p-5 rounded-2xl border-0 shadow-sm text-white overflow-hidden relative" style={{ background: '#00B5F0' }}>
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20" style={{ background: '#FF6EC7' }} />
-            <Icon name="Send" size={22} />
-            <p className="font-display font-black mt-2 text-lg">Telegram-канал</p>
-            <p className="text-sm text-white/85 mt-1">Все новости компании — теперь и здесь.</p>
-            <Button className="mt-4 w-full rounded-full font-black" style={{ background: '#fff', color: '#00B5F0' }}>
-              Открыть канал
+          {/* Чат-бот — быстрый доступ */}
+          <Card className="p-5 rounded-2xl border-0 shadow-sm text-white overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #FF6EC7, #00B5F0)' }}>
+            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20 bg-white" />
+            <Icon name="Bot" size={22} />
+            <p className="font-display font-black mt-2 text-lg">Чат-бот GreenTeam</p>
+            <p className="text-sm text-white/85 mt-1">Задай вопрос боту — ответит мгновенно 24/7</p>
+            <Button className="mt-4 w-full rounded-full font-black" style={{ background: '#fff', color: '#FF6EC7' }}
+              onClick={() => window.open('https://t.me/green_team_2_0_bot', '_blank')}>
+              <Icon name="Send" size={15} className="mr-1" /> @green_team_2_0_bot
             </Button>
           </Card>
 
