@@ -1,17 +1,41 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 const nav = [
   { id: 'feed', label: 'Лента', icon: 'Newspaper' },
   { id: 'events', label: 'События', icon: 'CalendarDays' },
   { id: 'birthdays', label: 'Дни рождения', icon: 'Cake' },
   { id: 'team', label: 'Дирекция', icon: 'Network' },
+  { id: 'profiles', label: 'Профили', icon: 'Users' },
   { id: 'bot', label: 'Боттендер', icon: 'Bot' },
+];
+
+type Profile = {
+  id: number;
+  name: string;
+  role: string;
+  dept: string;
+  phone: string;
+  tg: string;
+  since: string;
+  photo: string;
+  color: string;
+};
+
+const initialProfiles: Profile[] = [
+  { id: 1, name: 'Анна Соколова', role: 'Менеджер по продажам', dept: 'Продажи', phone: '+7 900 111-22-33', tg: '@anna_s', since: '2022', photo: '', color: '#FF6EC7' },
+  { id: 2, name: 'Игорь Лебедев', role: 'Аналитик', dept: 'Аналитика', phone: '+7 900 222-33-44', tg: '@igor_l', since: '2021', photo: '', color: '#00B5F0' },
+  { id: 3, name: 'Мария Кузнецова', role: 'HR-специалист', dept: 'Персонал', phone: '+7 900 333-44-55', tg: '@masha_k', since: '2023', photo: '', color: '#A8E63D' },
+  { id: 4, name: 'Дмитрий Орлов', role: 'Руководитель направления', dept: 'Управление', phone: '+7 900 444-55-66', tg: '@dmitry_o', since: '2019', photo: '', color: '#FF6EC7' },
+  { id: 5, name: 'Елена Васильева', role: 'Маркетолог', dept: 'Маркетинг', phone: '+7 900 555-66-77', tg: '@elena_v', since: '2021', photo: '', color: '#00B5F0' },
+  { id: 6, name: 'Павел Громов', role: 'Менеджер', dept: 'Продажи', phone: '+7 900 666-77-88', tg: '@pavel_g', since: '2025', photo: '', color: '#A8E63D' },
 ];
 
 const feed = [
@@ -97,6 +121,33 @@ const GreenTeamLogo = ({ size = 44 }: { size?: number }) => {
 const Index = () => {
   const [active, setActive] = useState('feed');
   const [botMsg, setBotMsg] = useState('');
+  const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
+  const [editProfile, setEditProfile] = useState<Profile | null>(null);
+  const [viewProfile, setViewProfile] = useState<Profile | null>(null);
+  const [search, setSearch] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const saveProfile = () => {
+    if (!editProfile) return;
+    setProfiles(prev => prev.map(p => p.id === editProfile.id ? editProfile : p));
+    setEditProfile(null);
+  };
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editProfile) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setEditProfile({ ...editProfile, photo: ev.target?.result as string });
+    reader.readAsDataURL(file);
+  };
+
+  const filtered = profiles.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.dept.toLowerCase().includes(search.toLowerCase()) ||
+    p.role.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const yearsIn = (since: string) => new Date().getFullYear() - Number(since);
 
   return (
     <div className="min-h-screen" style={{ background: '#f0f8ff' }}>
@@ -322,6 +373,64 @@ const Index = () => {
             </div>
           )}
 
+          {active === 'profiles' && (
+            <div className="animate-fade-in space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Поиск по имени, отделу..."
+                    className="rounded-full pl-9"
+                  />
+                </div>
+                <Badge variant="secondary" className="rounded-full shrink-0">{filtered.length} чел.</Badge>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {filtered.map(p => (
+                  <Card key={p.id} className="rounded-2xl border-0 shadow-sm hover-lift bg-white overflow-hidden">
+                    {/* Цветная шапка */}
+                    <div className="h-16 relative" style={{ background: p.color + '22' }}>
+                      <div className="absolute -bottom-7 left-4">
+                        <Avatar className="h-14 w-14 border-4 border-white shadow-md cursor-pointer"
+                          onClick={() => setViewProfile(p)}>
+                          <AvatarImage src={p.photo} />
+                          <AvatarFallback className="font-black text-white text-lg" style={{ background: p.color }}>
+                            {initials(p.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <button
+                        onClick={() => setEditProfile({ ...p })}
+                        className="absolute top-2 right-3 h-7 w-7 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                        style={{ background: 'rgba(255,255,255,0.7)' }}
+                      >
+                        <Icon name="Pencil" size={13} className="text-gray-600" />
+                      </button>
+                    </div>
+                    <div className="pt-9 px-4 pb-4">
+                      <p className="font-black text-base cursor-pointer hover:underline" onClick={() => setViewProfile(p)}>{p.name}</p>
+                      <p className="text-sm font-semibold" style={{ color: p.color }}>{p.role}</p>
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="rounded-full text-xs">{p.dept}</Badge>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Icon name="CalendarCheck" size={12} /> с {p.since} г.
+                          {yearsIn(p.since) > 0 && <span className="font-semibold" style={{ color: '#4caf20' }}>· {yearsIn(p.since)} лет</span>}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <a href={`tel:${p.phone}`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-brand-blue transition-colors">
+                          <Icon name="Phone" size={13} /> {p.phone}
+                        </a>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           {active === 'bot' && (
             <div className="animate-fade-in">
               <Card className="rounded-2xl border-0 shadow-sm overflow-hidden">
@@ -415,6 +524,126 @@ const Index = () => {
           </Card>
         </aside>
       </main>
+
+      {/* Диалог редактирования */}
+      <Dialog open={!!editProfile} onOpenChange={() => setEditProfile(null)}>
+        <DialogContent className="rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display font-black" style={{ color: '#00B5F0' }}>
+              Редактировать профиль
+            </DialogTitle>
+          </DialogHeader>
+          {editProfile && (
+            <div className="space-y-4 mt-2">
+              {/* Фото */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20 border-4 border-white shadow-lg cursor-pointer" onClick={() => fileRef.current?.click()}>
+                  <AvatarImage src={editProfile.photo} />
+                  <AvatarFallback className="font-black text-white text-2xl" style={{ background: editProfile.color }}>
+                    {initials(editProfile.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <Button size="sm" variant="outline" className="rounded-full" onClick={() => fileRef.current?.click()}>
+                    <Icon name="Upload" size={14} className="mr-1" /> Загрузить фото
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG до 5 МБ</p>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label className="text-xs font-bold text-muted-foreground">Имя и фамилия</Label>
+                  <Input className="mt-1 rounded-xl" value={editProfile.name}
+                    onChange={e => setEditProfile({ ...editProfile, name: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs font-bold text-muted-foreground">Должность</Label>
+                  <Input className="mt-1 rounded-xl" value={editProfile.role}
+                    onChange={e => setEditProfile({ ...editProfile, role: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">Отдел</Label>
+                  <Input className="mt-1 rounded-xl" value={editProfile.dept}
+                    onChange={e => setEditProfile({ ...editProfile, dept: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">В компании с</Label>
+                  <Input className="mt-1 rounded-xl" value={editProfile.since}
+                    onChange={e => setEditProfile({ ...editProfile, since: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">Телефон</Label>
+                  <Input className="mt-1 rounded-xl" value={editProfile.phone}
+                    onChange={e => setEditProfile({ ...editProfile, phone: e.target.value })} />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">Telegram</Label>
+                  <Input className="mt-1 rounded-xl" value={editProfile.tg}
+                    onChange={e => setEditProfile({ ...editProfile, tg: e.target.value })} />
+                </div>
+              </div>
+              <Button className="w-full rounded-full font-black text-white mt-2" style={{ background: '#00B5F0' }} onClick={saveProfile}>
+                Сохранить
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Диалог просмотра профиля */}
+      <Dialog open={!!viewProfile} onOpenChange={() => setViewProfile(null)}>
+        <DialogContent className="rounded-2xl max-w-sm p-0 overflow-hidden">
+          {viewProfile && (
+            <>
+              <div className="h-28 relative" style={{ background: viewProfile.color }}>
+                <div className="absolute inset-0 opacity-20"
+                  style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
+                <div className="absolute -bottom-10 left-6">
+                  <Avatar className="h-20 w-20 border-4 border-white shadow-xl">
+                    <AvatarImage src={viewProfile.photo} />
+                    <AvatarFallback className="font-black text-white text-2xl" style={{ background: viewProfile.color }}>
+                      {initials(viewProfile.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              </div>
+              <div className="pt-14 px-6 pb-6 space-y-4">
+                <div>
+                  <h2 className="font-display font-black text-2xl">{viewProfile.name}</h2>
+                  <p className="font-semibold" style={{ color: viewProfile.color }}>{viewProfile.role}</p>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    <Badge variant="secondary" className="rounded-full">{viewProfile.dept}</Badge>
+                    {yearsIn(viewProfile.since) > 0 && (
+                      <Badge className="rounded-full text-white" style={{ background: '#A8E63D', color: '#1a1a1a' }}>
+                        {yearsIn(viewProfile.since)} {yearsIn(viewProfile.since) === 1 ? 'год' : 'лет'} в команде
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Icon name="Phone" size={15} style={{ color: viewProfile.color } as React.CSSProperties} />
+                    <a href={`tel:${viewProfile.phone}`} className="hover:underline">{viewProfile.phone}</a>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Icon name="Send" size={15} style={{ color: viewProfile.color } as React.CSSProperties} />
+                    <span>{viewProfile.tg}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Icon name="CalendarCheck" size={15} style={{ color: viewProfile.color } as React.CSSProperties} />
+                    <span>В компании с {viewProfile.since} года</span>
+                  </div>
+                </div>
+                <Button className="w-full rounded-full font-bold" variant="outline"
+                  onClick={() => { setViewProfile(null); setEditProfile({ ...viewProfile }); }}>
+                  <Icon name="Pencil" size={14} className="mr-2" /> Редактировать
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <footer className="border-t bg-white mt-4">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-center gap-3">
