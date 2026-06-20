@@ -54,15 +54,45 @@ const colorMap: Record<string, string> = {
 const initials = (name: string) =>
   name.split(' ').map((w) => w[0]).join('').slice(0, 2);
 
-const GreenTeamLogo = ({ size = 36 }: { size?: number }) => (
-  <img
-    src="https://cdn.poehali.dev/projects/b3633dd3-0424-4d83-af84-1d2d5d55dfc4/files/0796df9d-3384-441e-befe-6f779e6ed9c7.jpg"
-    alt="GreenTeam"
-    width={size}
-    height={size}
-    style={{ borderRadius: size * 0.22, objectFit: 'cover', display: 'block' }}
-  />
-);
+const GreenTeamLogo = ({ size = 44 }: { size?: number }) => {
+  const r = size * 0.22;
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" rx="24" fill="#00B5F0"/>
+      {/* Буквы GREEN — верхний ряд */}
+      <text
+        x="50" y="38"
+        textAnchor="middle"
+        fontFamily="Nunito, Arial Rounded MT Bold, sans-serif"
+        fontWeight="900"
+        fontSize="30"
+        fill="#FF6EC7"
+        stroke="#fff"
+        strokeWidth="2"
+        paintOrder="stroke"
+        letterSpacing="-1"
+      >GREEN</text>
+      {/* Зелёный ромб-листок по центру */}
+      <path d="M50 42 C54 46 58 50 50 58 C42 50 46 46 50 42Z" fill="#A8E63D"/>
+      <path d="M44 50 C48 46 52 46 56 50 C52 54 48 54 44 50Z" fill="#A8E63D"/>
+      {/* Звёздочка внутри ромба */}
+      <circle cx="50" cy="50" r="3" fill="#00B5F0"/>
+      {/* Буквы TEAM — нижний ряд */}
+      <text
+        x="50" y="82"
+        textAnchor="middle"
+        fontFamily="Nunito, Arial Rounded MT Bold, sans-serif"
+        fontWeight="900"
+        fontSize="30"
+        fill="#FF6EC7"
+        stroke="#fff"
+        strokeWidth="2"
+        paintOrder="stroke"
+        letterSpacing="-1"
+      >TEAM</text>
+    </svg>
+  );
+};
 
 const Index = () => {
   const [active, setActive] = useState('feed');
