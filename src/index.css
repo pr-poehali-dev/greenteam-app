@@ -32,7 +32,11 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
+
+    --brand-pink: 330 90% 58%;
+    --brand-blue: 196 90% 52%;
+    --brand-green: 142 72% 45%;
 
     --sidebar-background: 0 0% 98%;
 
@@ -96,6 +100,37 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(
+      120deg,
+      hsl(var(--brand-pink)),
+      hsl(var(--brand-blue)),
+      hsl(var(--brand-green))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .bg-brand-gradient {
+    background: linear-gradient(
+      120deg,
+      hsl(var(--brand-pink)),
+      hsl(var(--brand-blue)) 55%,
+      hsl(var(--brand-green))
+    );
+  }
+  .hover-lift {
+    transition:
+      transform 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -16px rgba(0, 0, 0, 0.18);
   }
 }
