@@ -70,24 +70,23 @@ const onboardingSteps = [
 ];
 
 const DIRECTORATES = [
-  'Дирекция продаж',
-  'Дирекция маркетинга',
-  'Дирекция HR',
-  'Дирекция финансов',
-  'Дирекция IT',
-  'Дирекция логистики',
-  'Дирекция развития',
-  'Дирекция обучения',
-  'Дирекция контроля качества',
+  'CEO',
+  'HRD',
+  'Финансовая дирекция',
+  'IT Дирекция',
+  'Производственная дирекция',
+  'Дирекция по логистике и ВЭД',
   'Дирекция клиентского сервиса',
-  'Дирекция правового обеспечения',
-  'Дирекция стратегии',
+  'Дирекция по правовым вопросам',
+  'PR Дирекция',
+  'Исполнительная дирекция',
+  'Дирекция по экономике и развитию',
 ];
 
 const DIR_COLORS = [
   '#FF6EC7', '#00B5F0', '#A8E63D', '#FF9F43', '#6C63FF',
   '#FF6B6B', '#26de81', '#fd9644', '#45aaf2', '#a55eea',
-  '#2bcbba', '#fc5c65',
+  '#2bcbba',
 ];
 
 type Employee = {
@@ -167,12 +166,8 @@ const formatBirthday = (birthday: string): string => {
 };
 
 const initialEmployees: Employee[] = [
-  { id: 1, name: 'Анна Соколова', role: 'Директор по продажам', directorate: 'Дирекция продаж', isHead: true, phone: '+7 900 111-22-33', tg: '@anna_s', startDate: '2020-03-15', birthday: '1990-06-20', photo: '', country: 'Россия', city: 'Москва', address: 'ул. Тверская, 10' },
-  { id: 2, name: 'Игорь Лебедев', role: 'Менеджер по продажам', directorate: 'Дирекция продаж', isHead: false, phone: '+7 900 222-33-44', tg: '@igor_l', startDate: '2022-11-01', birthday: '1988-06-27', photo: '', country: 'Россия', city: 'Санкт-Петербург', address: 'Невский пр., 45' },
-  { id: 3, name: 'Мария Кузнецова', role: 'HR-директор', directorate: 'Дирекция HR', isHead: true, phone: '+7 900 333-44-55', tg: '@masha_k', startDate: '2019-07-01', birthday: '1985-08-12', photo: '', country: 'Казахстан', city: 'Алматы', address: 'пр. Абая, 150' },
-  { id: 4, name: 'Дмитрий Орлов', role: 'Директор по маркетингу', directorate: 'Дирекция маркетинга', isHead: true, phone: '+7 900 444-55-66', tg: '@dmitry_o', startDate: '2019-01-20', birthday: '1983-03-05', photo: '', country: 'Беларусь', city: 'Минск', address: 'пр. Независимости, 67' },
-  { id: 5, name: 'Елена Васильева', role: 'Маркетолог', directorate: 'Дирекция маркетинга', isHead: false, phone: '+7 900 555-66-77', tg: '@elena_v', startDate: '2021-04-10', birthday: '1993-11-30', photo: '', country: 'Россия', city: 'Краснодар', address: 'ул. Красная, 22' },
-  { id: 6, name: 'Павел Громов', role: 'Директор IT', directorate: 'Дирекция IT', isHead: true, phone: '+7 900 666-77-88', tg: '@pavel_g', startDate: '2021-09-01', birthday: '1991-07-14', photo: '', country: 'Россия', city: 'Новосибирск', address: 'ул. Ленина, 5' },
+  { id: 1, name: 'Пример: Генеральный директор', role: 'CEO', directorate: 'CEO', isHead: true, phone: '', tg: '', startDate: '', birthday: '', photo: '', country: 'Россия', city: 'Москва', address: '' },
+  { id: 2, name: 'Пример: HR-директор', role: 'HRD', directorate: 'HRD', isHead: true, phone: '', tg: '', startDate: '', birthday: '', photo: '', country: 'Россия', city: 'Москва', address: '' },
 ];
 
 const feed = [
